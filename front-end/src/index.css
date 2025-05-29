@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%; /* Light mode background */
+  --foreground: 224 71.4% 4.1%; /* Light mode text */
+
+  --card: 0 0% 100%;
+  --card-foreground: 224 71.4% 4.1%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71.4% 4.1%;
+
+  --primary: 262.1 83.3% 57.8%; /* Vibrant Purple */
+  --primary-foreground: 355.7 100% 97.3%;
+
+  --secondary: 220 14.3% 95.9%;
+  --secondary-foreground: 220.9 39.3% 11%;
+
+  --muted: 220 14.3% 95.9%;
+  --muted-foreground: 220 8.9% 46.1%;
+
+  --accent: 300 80% 70%; /* Pinkish accent */
+  --accent-foreground: 210 20% 98%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 355.7 100% 97.3%;
+
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 262.1 83.3% 57.8%;
+
+  --radius: 0.75rem; /* Slightly more rounded */
+}
+
+.dark {
+  --background: 224 71.4% 4.1%; /* Dark mode background */
+  --foreground: 210 20% 98%; /* Dark mode text */
+
+  --card: 224 71.4% 4.1%;
+  --card-foreground: 210 20% 98%;
+
+  --popover: 224 71.4% 4.1%;
+  --popover-foreground: 210 20% 98%;
+
+  --primary: 262.1 83.3% 57.8%;
+  --primary-foreground: 355.7 100% 97.3%;
+
+  --secondary: 215 27.9% 16.9%;
+  --secondary-foreground: 210 20% 98%;
+
+  --muted: 215 27.9% 16.9%;
+  --muted-foreground: 217.9 10.6% 64.9%;
+
+  --accent: 300 70% 60%;
+  --accent-foreground: 210 20% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 355.7 100% 97.3%;
+
+  --border: 215 27.9% 16.9%;
+  --input: 215 27.9% 16.9%;
+  --ring: 262.1 83.3% 57.8%;
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Consider adding Inter via Google Fonts or similar */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Glassmorphism example for cards - can be applied selectively */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1); /* Adjust alpha for desired transparency */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* For Safari */
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-card {
+  background: rgba(30, 30, 40, 0.2); /* Darker transparency */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text example */
+.text-gradient-primary {
+  @apply bg-gradient-to-r from-primary via-accent to-purple-600 bg-clip-text text-transparent;
+}
+
+/* Custom scrollbar (optional, for aesthetics) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.7);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}

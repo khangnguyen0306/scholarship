@@ -1,0 +1,78 @@
+import asyncHandler from "express-async-handler";
+import ScholarshipRequirement from "../models/ScholarshipRequirement.model.js";
+
+/**
+ * Tạo yêu cầu học bổng
+ * Validate:
+ *  - scholarship: Bắt buộc (ObjectId học bổng)
+ *  - minGPA: Không bắt buộc, nếu có nên là số hợp lệ
+ *  - requiredCertificates: Không bắt buộc, mảng ObjectId chứng chỉ
+ *  - minCertificateScores: Không bắt buộc, mảng object { certificateType, minScore }
+ *  - otherConditions: Không bắt buộc, string
+ * Nếu thiếu scholarship trả về 400
+ */
+export const createScholarshipRequirement = asyncHandler(async (req, res) => {
+  const { scholarship, minGPA, requiredCertificates, minCertificateScores, otherConditions } = req.body;
+  if (!scholarship) {
+    return res.status(400).json({ status: 400, message: "Thiếu trường scholarship" });
+  }
+  const requirement = await ScholarshipRequirement.create({ scholarship, minGPA, requiredCertificates, minCertificateScores, otherConditions });
+  res.status(201).json({ status: 201, message: "Tạo yêu cầu học bổng thành công", data: requirement });
+});
+
+/**
+ * Lấy tất cả yêu cầu học bổng
+ * Có thể filter theo scholarship (id học bổng)
+ * Trả về 200, data là mảng yêu cầu
+ */
+export const getScholarshipRequirements = asyncHandler(async (req, res) => {
+  const { scholarship } = req.query;
+  let filter = {};
+  if (scholarship) filter.scholarship = scholarship;
+  const requirements = await ScholarshipRequirement.find(filter);
+  res.json({ status: 200, message: "Lấy danh sách yêu cầu học bổng thành công", data: requirements });
+});
+
+/**
+ * Lấy chi tiết yêu cầu học bổng theo id
+ * Nếu không tìm thấy trả về 404
+ */
+export const getScholarshipRequirementById = asyncHandler(async (req, res) => {
+  const requirement = await ScholarshipRequirement.findById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ status: 404, message: "Không tìm thấy yêu cầu học bổng" });
+  }
+  res.json({ status: 200, message: "Lấy chi tiết yêu cầu học bổng thành công", data: requirement });
+});
+
+/**
+ * Cập nhật yêu cầu học bổng
+ * Chỉ cập nhật trường truyền lên
+ * Nếu không tìm thấy trả về 404
+ */
+export const updateScholarshipRequirement = asyncHandler(async (req, res) => {
+  const { minGPA, requiredCertificates, minCertificateScores, otherConditions } = req.body;
+  const requirement = await ScholarshipRequirement.findById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ status: 404, message: "Không tìm thấy yêu cầu học bổng" });
+  }
+  if (minGPA !== undefined) requirement.minGPA = minGPA;
+  if (requiredCertificates) requirement.requiredCertificates = requiredCertificates;
+  if (minCertificateScores) requirement.minCertificateScores = minCertificateScores;
+  if (otherConditions) requirement.otherConditions = otherConditions;
+  await requirement.save();
+  res.json({ status: 200, message: "Cập nhật yêu cầu học bổng thành công", data: requirement });
+});
+
+/**
+ * Xóa yêu cầu học bổng
+ * Nếu không tìm thấy trả về 404
+ */
+export const deleteScholarshipRequirement = asyncHandler(async (req, res) => {
+  const requirement = await ScholarshipRequirement.findById(req.params.id);
+  if (!requirement) {
+    return res.status(404).json({ status: 404, message: "Không tìm thấy yêu cầu học bổng" });
+  }
+  await requirement.deleteOne();
+  res.json({ status: 200, message: "Xóa yêu cầu học bổng thành công" });
+}); 
