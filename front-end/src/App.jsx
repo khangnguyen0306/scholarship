@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Provider, useSelector } from 'react-redux';
 import { store } from '../store';
 import SettingsPage from './pages/SettingsPage';
-import VerifyEmail from './pages/auth/VerifyEmail';
+
 // Lazy load pages
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
@@ -22,6 +22,7 @@ const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
 const NewBlogPostPage = lazy(() => import('@/pages/blog/NewBlogPostPage'));
 const BlogPostPage = lazy(() => import('@/pages/blog/BlogPostPage'));
 const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
+const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
 
 
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
