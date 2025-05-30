@@ -47,7 +47,7 @@ const Navbar = () => {
             <motion.div whileHover={{ scale: 1.1, rotate: 5 }}>
               <Award className="h-10 w-10 text-primary" />
             </motion.div>
-            <span className="text-2xl font-bold text-gradient-primary">ScholarSeeker</span>
+            <span className="text-2xl font-bold text-gradient-primary">GrantHub</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-6">
@@ -84,7 +84,7 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <DropdownMenuItem onClick={() => navigate(`/profile/${user._id}`)}>
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Hồ sơ</span>
                   </DropdownMenuItem>

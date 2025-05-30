@@ -6,7 +6,7 @@ export async function sendApplicationEmail({ to, application, scholarship, user,
   const grades11 = snapshot.grades11 || [];
   const grades12 = snapshot.grades12 || [];
   const certificates = certificatesPopulated !== undefined ? certificatesPopulated : (snapshot.certificates || []);
-  const note = application.note || '';
+  const essay = application.essay || '';
   const documents = application.documents || [];
 
   const html = `
@@ -18,12 +18,12 @@ export async function sendApplicationEmail({ to, application, scholarship, user,
         <tr><td><b>Nơi nộp:</b></td><td>${scholarship.location || ''}</td></tr>
         <tr><td><b>Trạng thái:</b></td><td>${application.status}</td></tr>
         <tr><td><b>Ngày nộp:</b></td><td>${new Date(application.createdAt).toLocaleString()}</td></tr>
-        <tr><td><b>Ghi chú:</b></td><td>${note}</td></tr>
+        <tr><td><b>Bài luận:</b></td><td>${essay ? essay.replace(/\n/g, '<br/>') : ''}</td></tr>
       </table>
       ${documents.length > 0 ? `
       <h3>Tài liệu đã nộp</h3>
       <ul>
-        ${documents.map((doc, i) => `<li><a href="${doc}" target="_blank">Tài liệu ${i + 1}</a></li>`).join('')}
+        ${documents.map((doc, i) => `<li><b>${doc.name}:</b> <a href="${doc.url}" target="_blank">${doc.url}</a></li>`).join('')}
       </ul>
       ` : ''}
       <h3>Bảng điểm lớp 10</h3>

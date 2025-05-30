@@ -28,12 +28,17 @@ const router = express.Router();
  *             properties:
  *               scholarshipId:
  *                 type: string
- *               note:
+ *               essay:
  *                 type: string
  *               documents:
  *                 type: array
  *                 items:
- *                   type: string
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     url:
+ *                       type: string
  *     responses:
  *       201:
  *         description: Nộp hồ sơ thành công

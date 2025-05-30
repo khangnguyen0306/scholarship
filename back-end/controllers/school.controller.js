@@ -1,11 +1,12 @@
 import asyncHandler from "express-async-handler";
 import School from "../models/School.model.js";
+import Scholarship from "../models/Scholarship.model.js";
 
 // @desc    Tạo trường học mới
 // @route   POST /api/schools
 // @access  Admin
 const createSchool = asyncHandler(async (req, res) => {
-  const { name, nationality, address, website, description, logo, foundedYear, email } = req.body;
+  const { name, nationality, address, website, description, logo, image, foundedYear, email } = req.body;
   if (!name || !nationality || !address || !description || !foundedYear || !email) {
     return res.status(400).json({ status: 400, message: "Vui lòng nhập đầy đủ các trường bắt buộc: name, nationality, address, description, foundedYear, email" });
   }
@@ -13,10 +14,10 @@ const createSchool = asyncHandler(async (req, res) => {
   if (exists) {
     return res.status(400).json({ status: 400, message: "Trường học đã tồn tại" });
   }
-  const school = await School.create({ name, nationality, address, website, description, logo, foundedYear, email });
+  const school = await School.create({ name, nationality, address, website, description, logo, image, foundedYear, email });
   res.status(201).json({ status: 201, message: "Tạo trường học thành công", data: school });
 });
-
+ 
 // @desc    Lấy danh sách trường học
 // @route   GET /api/schools
 // @access  Admin
@@ -27,7 +28,7 @@ const getSchools = asyncHandler(async (req, res) => {
     filter.name = { $regex: search, $options: 'i' };
   }
   if (nationality) {
-    filter.nationality = nationality;
+    filter.nationality = { $regex: `^${nationality}$`, $options: 'i' };
   }
   const schools = await School.find(filter);
   res.json({ status: 200, message: "Lấy danh sách trường học thành công", data: schools });
@@ -41,14 +42,17 @@ const getSchoolById = asyncHandler(async (req, res) => {
   if (!school) {
     return res.status(404).json({ status: 404, message: "Không tìm thấy trường học" });
   }
-  res.json({ status: 200, message: "Lấy chi tiết trường học thành công", data: school });
+  // Lấy các học bổng liên quan
+  const scholarships = await Scholarship.find({ school: school._id })
+    .select('name description deadline value field');
+  res.json({ status: 200, message: "Lấy chi tiết trường học thành công", data: { ...school.toObject(), scholarships } });
 });
 
 // @desc    Cập nhật trường học
 // @route   PUT /api/schools/:id
 // @access  Admin
 const updateSchool = asyncHandler(async (req, res) => {
-  const { name, address, website, description, logo, foundedYear, email } = req.body;
+  const { name, address, website, description, logo, image, foundedYear, email } = req.body;
   const school = await School.findById(req.params.id);
   if (!school) {
     return res.status(404).json({ status: 404, message: "Không tìm thấy trường học" });
@@ -58,6 +62,7 @@ const updateSchool = asyncHandler(async (req, res) => {
   if (website) school.website = website;
   if (description) school.description = description;
   if (logo) school.logo = logo;
+  if (image) school.image = image;
   if (foundedYear) school.foundedYear = foundedYear;
   if (email) school.email = email;
   await school.save();

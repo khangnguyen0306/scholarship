@@ -5,7 +5,7 @@ import { selectCurrentUser } from '../slices/authSlice';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button'; // Import Button for CTA
 
-const ProtectedRoute = ({ children, allowedRoles, requiresVip = false }) => {
+const ProtectedRoute = ({ children, allowedRoles, isPremium = false }) => {
   const user = useSelector(selectCurrentUser);
   const isAuthenticated = !!user;
   const location = useLocation();
@@ -29,7 +29,7 @@ const ProtectedRoute = ({ children, allowedRoles, requiresVip = false }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (requiresVip && !user?.isVip) {
+  if (isPremium && !user?.isPremium) {  
     toast({
       title: "Yêu Cầu Tài Khoản VIP",
       description: "Tính năng này chỉ dành cho thành viên VIP.",

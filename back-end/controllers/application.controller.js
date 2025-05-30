@@ -16,7 +16,7 @@ export const createApplication = asyncHandler(async (req, res) => {
   if (!user.isPremium) {
     return res.status(403).json({ status: 403, message: "Chỉ user đã đăng ký gói VIP mới được nộp hồ sơ học bổng" });
   }
-  const { scholarshipId, note, documents } = req.body;
+  const { scholarshipId, essay, documents } = req.body;
   if (!scholarshipId) {
     return res.status(400).json({ status: 400, message: "Thiếu scholarshipId" });
   }
@@ -41,7 +41,7 @@ export const createApplication = asyncHandler(async (req, res) => {
   const app = await Application.create({
     student: req.user._id,
     scholarship: scholarshipId,
-    note,
+    essay,
     documents,
     profileSnapshot,
     status: "pending"

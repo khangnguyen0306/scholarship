@@ -14,8 +14,8 @@ const applicationSchema = new mongoose.Schema({
       date: Date
     }]
   },
-  documents: [{ type: String }], // link file upload nếu có
-  note: { type: String },
+  documents: [{ name: String, url: String }], // array of { name, url }
+  essay: { type: String },
 }, { timestamps: true });
 
 const Application = mongoose.model('Application', applicationSchema);

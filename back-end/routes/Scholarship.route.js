@@ -47,6 +47,26 @@ const router = express.Router();
  *         schema:
  *           type: string
  *         description: Lọc theo school id (ObjectId của trường)
+ *       - in: query
+ *         name: gpa
+ *         schema:
+ *           type: number
+ *         description: Lọc học bổng theo GPA tối thiểu (so với yêu cầu học bổng)
+ *       - in: query
+ *         name: ielts
+ *         schema:
+ *           type: number
+ *         description: Lọc học bổng theo điểm IELTS tối thiểu (so với yêu cầu học bổng)
+ *       - in: query
+ *         name: toeic
+ *         schema:
+ *           type: number
+ *         description: Lọc học bổng theo điểm TOEIC tối thiểu (so với yêu cầu học bổng)
+ *       - in: query
+ *         name: sat
+ *         schema:
+ *           type: number
+ *         description: Lọc học bổng theo điểm SAT tối thiểu (so với yêu cầu học bổng)
  *     responses:
  *       200:
  *         description: Lấy danh sách học bổng thành công

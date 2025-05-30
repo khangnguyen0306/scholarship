@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Search, Edit, PlusCircle, Shield } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '../slices/authSlice';
+import { selectCurrentUser } from '../../slices/authSlice';
 
 const mockPosts = [
   { id: 'post1', title: 'Bí quyết viết luận xin học bổng ấn tượng', author: 'Nguyễn Lan Anh', date: '2025-05-15', excerpt: 'Luận văn là một phần quan trọng trong hồ sơ xin học bổng. Bài viết này sẽ chia sẻ những bí quyết giúp bạn...', image: 'blog_essay_writing.jpg', category: 'Kỹ năng' },
@@ -17,7 +17,7 @@ const mockPosts = [
 const BlogPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const user = useSelector(selectCurrentUser);
-  const isAuthenticated = !!user;
+
 
   const filteredPosts = mockPosts.filter(post =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +40,7 @@ const BlogPage = () => {
       <div className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="relative w-full md:flex-grow">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
+          <Input
             type="text"
             placeholder="Tìm kiếm bài viết..."
             className="pl-10 py-3 text-lg w-full"
@@ -48,7 +48,7 @@ const BlogPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {isAuthenticated && user?.isVip && (
+        {user?.isPremium && (
           <Button asChild className="w-full md:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity duration-300">
             <Link to="/blog/new-post">
               <PlusCircle className="mr-2 h-5 w-5" /> Viết Bài Mới
@@ -65,11 +65,11 @@ const BlogPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              whileHover={{ y: -5, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)"}}
+              whileHover={{ y: -5, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)" }}
             >
               <Card className="h-full flex flex-col overflow-hidden glass-card hover:border-primary transition-all duration-300">
                 <CardHeader className="p-0">
-                  <img  alt={post.title} class="w-full h-48 object-cover" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
+                  <img alt={post.title} class="w-full h-48 object-cover" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
                 </CardHeader>
                 <CardContent className="p-6 flex-grow flex flex-col">
                   <span className="text-xs font-semibold uppercase text-primary mb-1">{post.category}</span>
@@ -91,17 +91,17 @@ const BlogPage = () => {
           ))}
         </div>
       ) : (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="text-center py-10"
         >
-          <img  alt="No posts found" class="mx-auto h-40 w-40 mb-4 text-muted-foreground" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
+          <img alt="No posts found" class="mx-auto h-40 w-40 mb-4 text-muted-foreground" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
           <p className="text-xl text-muted-foreground">Không tìm thấy bài viết nào.</p>
         </motion.div>
       )}
-      
-      {isAuthenticated && !user?.isVip && (
+
+      {!user?.isPremium && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -119,7 +119,7 @@ const BlogPage = () => {
           </Button>
         </motion.div>
       )}
-       {!isAuthenticated && (
+      {!user && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

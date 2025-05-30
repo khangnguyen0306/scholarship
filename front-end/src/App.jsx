@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-ro
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
-import { Provider } from 'react-redux';
+import { Provider, useSelector } from 'react-redux';
 import { store } from '../store';
 import SettingsPage from './pages/SettingsPage';
 import VerifyEmail from './pages/auth/VerifyEmail';
@@ -12,14 +12,14 @@ const HomePage = lazy(() => import('@/pages/HomePage'));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
-const SchoolsListPage = lazy(() => import('@/pages/SchoolsListPage'));
-const SchoolDetailPage = lazy(() => import('@/pages/SchoolDetailPage'));
-const ScholarshipsListPage = lazy(() => import('@/pages/ScholarshipsListPage'));
-const ScholarshipDetailPage = lazy(() => import('@/pages/ScholarshipDetailPage'));
+const SchoolsListPage = lazy(() => import('@/pages/schools/SchoolsListPage'));
+const SchoolDetailPage = lazy(() => import('@/pages/schools/SchoolDetailPage'));
+const ScholarshipsListPage = lazy(() => import('@/pages/scholarships/ScholarshipsListPage'));
+const ScholarshipDetailPage = lazy(() => import('@/pages/scholarships/ScholarshipDetailPage'));
 const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 const VipSubscriptionPage = lazy(() => import('@/pages/VipSubscriptionPage'));
-const BlogPage = lazy(() => import('@/pages/BlogPage'));
-const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'));
+const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
+const BlogPostPage = lazy(() => import('@/pages/blog/BlogPostPage'));
 
 const NewPostPage = lazy(() => {
   // This is a placeholder. In a real app, you'd import a real component.
@@ -85,7 +85,7 @@ function App() {
               <Route path="scholarships" element={<ScholarshipsListPage />} />
               <Route path="scholarships/:scholarshipId" element={<ScholarshipDetailPage />} />
 
-              <Route path="profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+              <Route path="profile/:userId" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
               <Route path="vip-subscription" element={<VipSubscriptionPage />} />
 
               <Route path="blog" element={<BlogPage />} />
@@ -93,7 +93,7 @@ function App() {
               <Route
                 path="blog/new-post"
                 element={
-                  <ProtectedRoute requiresVip={true}>
+                  <ProtectedRoute isPremium={true}>
                     <NewPostPage />
                   </ProtectedRoute>
                 }

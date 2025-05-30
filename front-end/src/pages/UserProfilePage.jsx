@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Edit3, Shield, Award, FileText, Gift, BarChartHorizontalBig } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { selectCurrentUser } from '../slices/authSlice';
 import { useSelector } from 'react-redux';
-
+import { useGetUserByIdQuery } from '../services/UserAPI';
+import UserIcon from "../../public/images/av1.svg"
 // Mock data for submitted applications and recommended scholarships
 const mockSubmittedApplications = [
   { id: 'app1', scholarshipName: 'Học bổng Toàn phần VinUniversity', status: 'Đang xét duyệt', date: '2025-03-15', link: '/scholarships/s1' },
@@ -23,10 +23,45 @@ const mockRecommendedScholarships = [
     { id: 'rec3', name: 'Học bổng Sáng tạo Swinburne', university: 'Swinburne University of Technology Vietnam', matchPercentage: 85, link: '/scholarships/s_swin_creative' },
 ];
 
+// Hàm map dữ liệu điểm từ mảng sang object phẳng
+function mapGradesToState(grades10 = [], grades11 = [], grades12 = []) {
+  const subjectMap = {
+    "Toán": "math", "Văn": "literature", "Vật lý": "physics", "Hóa học": "chemistry", "Sinh học": "biology",
+    "Lịch sử": "history", "Địa lý": "geography", "Giáo dục công dân": "civic", "Tin học": "informatics",
+    "Công nghệ": "technology", "Ngoại ngữ": "english", "Thể dục": "pe", "Quốc phòng": "defense"
+  };
+  const grades = {};
+  grades10.forEach(item => { if(subjectMap[item.subject]) grades[`${subjectMap[item.subject]}_10`] = item.score; });
+  grades11.forEach(item => { if(subjectMap[item.subject]) grades[`${subjectMap[item.subject]}_11`] = item.score; });
+  grades12.forEach(item => { if(subjectMap[item.subject]) grades[`${subjectMap[item.subject]}_12`] = item.score; });
+  // Đảm bảo có đủ key cho các môn phổ biến
+  const allKeys = ["math", "physics", "chemistry", "literature", "english"];
+  [10,11,12].forEach(year => {
+    allKeys.forEach(key => {
+      if (grades[`${key}_${year}`] === undefined) grades[`${key}_${year}`] = '';
+    });
+  });
+  return grades;
+}
+
+// Hàm map dữ liệu chứng chỉ từ mảng sang object
+// function mapCertificatesToState(certificates = [], certificateTypeMap = {}) {
+//   const certMap = { ielts: '', sat: '', toeic: '' };
+//   certificates.forEach(cert => {
+//     const typeName = certificateTypeMap[cert.certificateType]?.toLowerCase();
+//     if (typeName) {
+//       if (typeName.includes('ielts')) certMap.ielts = cert.score;
+//       if (typeName.includes('sat')) certMap.sat = cert.score;
+//       if (typeName.includes('toeic')) certMap.toeic = cert.score;
+//     }
+//   });
+//   return certMap;
+// }
 
 const UserProfilePage = () => {
-  const user = useSelector(selectCurrentUser);
-  const isAuthenticated = !!user;
+  const { userId } = useParams();
+  const { data: user, isLoading, error } = useGetUserByIdQuery(userId);
+  const userData = user?.data;
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -43,16 +78,16 @@ const UserProfilePage = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      setProfileData({
-        name: user.name || '',
-        email: user.email || '',
-        avatarUrl: user.avatarUrl || '',
-        grades: user.grades || profileData.grades,
-        certificates: user.certificates || profileData.certificates,
-      });
+    if (userData) {
+      setProfileData(prev => ({
+        name: userData.firstName + ' ' + userData.lastName || '',
+        email: userData.email || '',
+        avatarUrl: userData.profileImage || '',
+        grades: mapGradesToState(userData.grades10, userData.grades11, userData.grades12) || prev.grades,
+        certificates: prev.certificates || { sat: '', ielts: '', toeic: '' }
+      }));
     }
-  }, [user]);
+  }, [userData]);
 
   if (!user) {
     return (
@@ -104,8 +139,10 @@ const UserProfilePage = () => {
     sat: 'SAT', ielts: 'IELTS', toeic: 'TOEIC'
   };
 
+  console.log(profileData.grades);
 
   return (
+    isLoading ? <div>Loading...</div> :
     <div className="container mx-auto py-8 space-y-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -116,16 +153,16 @@ const UserProfilePage = () => {
           <div className="h-40 bg-gradient-to-r from-primary to-accent" />
           <CardHeader className="flex flex-col items-center text-center -mt-16">
             <Avatar className="w-32 h-32 border-4 border-background shadow-lg mb-4">
-              <AvatarImage src={profileData.avatarUrl || `https://avatar.vercel.sh/${profileData.email}.png`} alt={profileData.name} />
-              <AvatarFallback className="text-4xl">{profileData.name ? profileData.name.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
+              <AvatarImage src={userData.profileImage || UserIcon} alt={userData.firstName} />
+              <AvatarFallback className="text-4xl">{userData.firstName ? userData.firstName.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
             </Avatar>
             {isEditing ? (
-              <Input name="name" value={profileData.name} onChange={handleInputChange} className="text-3xl font-bold text-center mb-2 w-1/2 mx-auto" />
+              <Input name="name" value={user.firstName + ' ' + user.lastName} onChange={handleInputChange} className="text-3xl font-bold text-center mb-2 w-1/2 mx-auto" />
             ) : (
-              <CardTitle className="text-3xl font-bold">{profileData.name}</CardTitle>
+              <CardTitle className="text-3xl font-bold">{userData.firstName + ' ' + userData.lastName}</CardTitle>
             )}
-            <CardDescription className="text-lg text-muted-foreground">{profileData.email}</CardDescription>
-            {user.isVip && (
+            <CardDescription className="text-lg text-muted-foreground">{userData.email}</CardDescription>
+            {userData.isPremium && (
               <span className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-400 text-yellow-900">
                 <Shield className="h-4 w-4 mr-1" /> Thành viên VIP
               </span>
@@ -158,21 +195,48 @@ const UserProfilePage = () => {
             <CardContent className="space-y-6">
               <div>
                 <h3 className="text-xl font-semibold mb-3 text-foreground">Bảng điểm (Lớp 10-12)</h3>
-                {Object.entries(academicSubjects).map(([gradeLevel, subjects]) => (
-                  <div key={gradeLevel} className="mb-4 p-4 border rounded-md">
-                    <h4 className="font-medium mb-2 text-primary">{gradeLevel}</h4>
+                {[10, 11, 12].map(year => (
+                  <div key={year} className="mb-4 p-4 border rounded-md">
+                    <h4 className="font-medium mb-2 text-primary">Lớp {year}</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                      {subjects.map(subjectKey => (
-                        <div key={subjectKey} className="space-y-1">
-                          <Label htmlFor={subjectKey}>{subjectLabels[subjectKey.split('_')[0]]}</Label>
-                          <Input type="number" id={subjectKey} name={subjectKey} placeholder="Điểm" value={profileData.grades[subjectKey] || ''} onChange={handleGradeChange} min="0" max="10" step="0.1" />
-                        </div>
-                      ))}
+                      {[
+                        "Toán", "Văn", "Vật lý", "Hóa học", "Sinh học", "Lịch sử", "Địa lý", "Giáo dục công dân", "Tin học", "Công nghệ", "Ngoại ngữ", "Thể dục", "Quốc phòng"
+                      ].map(subject => {
+                          const gradesKey = `${subject}_${year}`;
+                            const grade = profileData.grades[gradesKey] || '';
+                        // console.log(grade);
+                        const found = grade || { score: '' };
+                        return (
+                          <div key={subject} className="space-y-1">
+                            <Label htmlFor={`grade-${year}-${subject}`}>{subject}</Label>
+                            <Input
+                              id={`grade-${year}-${subject}`}
+                              type="number"
+                              min="0" max="10" step="0.1"
+                              placeholder="VD: 8.5"
+                              value={found ? found.score : ''}
+                              onChange={e => {
+                                const value = e.target.value;
+                                setProfileData(prev => {
+                                  const arr = prev[gradesKey] ? [...prev[gradesKey]] : [];
+                                  const idx = arr.findIndex(item => item.subject === subject);
+                                  if (idx !== -1) {
+                                    arr[idx] = { ...arr[idx], score: value };
+                                  } else {
+                                    arr.push({ subject, score: value });
+                                  }
+                                  return { ...prev, [gradesKey]: arr };
+                                });
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
               </div>
-              <div>
+              {/* <div>
                 <h3 className="text-xl font-semibold mb-3 text-foreground">Chứng chỉ khác</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {Object.entries(certificateLabels).map(([certKey, certLabel]) => (
@@ -182,7 +246,7 @@ const UserProfilePage = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </motion.div>
@@ -239,7 +303,7 @@ const UserProfilePage = () => {
             </CardTitle>
             <CardDescription>Theo dõi trạng thái các đơn xin học bổng của bạn.</CardDescription>
           </CardHeader>
-          <CardContent>
+          {/* <CardContent>
             {mockSubmittedApplications.length > 0 ? (
               <ul className="space-y-4">
                 {mockSubmittedApplications.map(app => (
@@ -263,7 +327,7 @@ const UserProfilePage = () => {
             ) : (
               <p className="text-muted-foreground text-center py-4">Bạn chưa gửi đơn xin học bổng nào.</p>
             )}
-          </CardContent>
+          </CardContent> */}
         </Card>
       </motion.div>
 

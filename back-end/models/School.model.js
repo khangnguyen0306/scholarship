@@ -7,6 +7,7 @@ const schoolSchema = new mongoose.Schema({
     website: { type: String },
     description: { type: String, required: true },
     logo: { type: String },
+    image: { type: String },
     foundedYear: { type: Number, required: true },
     email: { type: String, required: true },
 }, { timestamps: true });

@@ -1,8 +1,8 @@
 // baseApiSlice.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { BE_API_LOCAL } from '../config/config';
-import { message } from 'antd';
 import { logOut, selectTokens } from '../slices/authSlice';
+
 
 export const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: BE_API_LOCAL,
@@ -34,7 +34,7 @@ export const baseApi = createApi({
       else if (status === 403) {
         // Khi không tìm thấy → chuyển về trang 404
         setTimeout(() => {
-          message.error('Không tìm thấy trang yêu cầu!');
+          // message.error('Không tìm thấy trang yêu cầu!');
           window.location.href = '/404';
         }, 300);
       }
@@ -46,6 +46,6 @@ export const baseApi = createApi({
 
     return result;
   },
-  tagTypes: ['USER'],
+  tagTypes: ['USER', 'SCHOOL', 'SCHOLARSHIP'],
   endpoints: () => ({}),
 });
