@@ -21,6 +21,7 @@ const VipSubscriptionPage = lazy(() => import('@/pages/VipSubscriptionPage'));
 const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
 const NewBlogPostPage = lazy(() => import('@/pages/blog/NewBlogPostPage'));
 const BlogPostPage = lazy(() => import('@/pages/blog/BlogPostPage'));
+const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
 
 
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
@@ -74,6 +75,9 @@ function App() {
 
               <Route path="profile/:userId" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
               <Route path="vip-subscription" element={<VipSubscriptionPage />} />
+              <Route path="payment-success" element={<PaymentSuccess />} />
+
+              
 
               <Route path="blog" element={<BlogPage />} />
               <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

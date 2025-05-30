@@ -6,33 +6,47 @@ import { CheckCircle, Award, Star } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../slices/authSlice';
-import { useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useNavigate, Link } from 'react-router-dom';
+import { useCreatePayOSPaymentMutation } from '../services/PaymentAPI';
 
 const VipSubscriptionPage = () => {
   const { toast } = useToast();
   const user = useSelector(selectCurrentUser);
   const isAuthenticated = !!user;
   const navigate = useNavigate();
+  const [createPayment, { isLoading }] = useCreatePayOSPaymentMutation();
 
-  const handleSubscribe = (planName) => {
-    // In a real app, this would redirect to Stripe Checkout or similar
-    // For demo, simulate successful subscription
-    
-    if (user) {
-      updateUser({ ...user, isVip: true }); // Update user state to reflect VIP status
+  const handleSubscribe = async (plan) => {
+    if (!user) {
       toast({
-        title: `Đăng ký ${planName} thành công!`,
-        description: "Cảm ơn bạn đã trở thành thành viên VIP. Tận hưởng các đặc quyền!",
-        className: "bg-green-500 text-white",
+        title: "Lỗi đăng ký",
+        description: "Vui lòng đăng nhập để đăng ký gói VIP.",
+        variant: "destructive",
       });
-      navigate('/profile');
-    } else {
-        toast({
-            title: "Lỗi đăng ký",
-            description: "Vui lòng đăng nhập để đăng ký gói VIP.",
-            variant: "destructive",
-        });
-        navigate('/login');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const amount = plan.name === "Gói Tháng" ? 199000 : 1990000;
+      const description = `Đăng ký ${plan.name}`;
+      
+      const result = await createPayment({
+        amount,
+        description
+      }).unwrap();
+
+      if (result.data?.paymentUrl) {
+        window.location.href = result.data.paymentUrl;
+      } else {
+        throw new Error('Không thể tạo URL thanh toán');
+      }
+    } catch (error) {
+      toast({
+        title: "Lỗi thanh toán",
+        description: error.data?.message || "Có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -116,10 +130,10 @@ const VipSubscriptionPage = () => {
                 <Button 
                   size="lg" 
                   className={`w-full text-lg py-3 bg-gradient-to-r ${plan.color} hover:opacity-90 transition-opacity duration-300 text-primary-foreground`}
-                  onClick={() => handleSubscribe(plan.name)}
-                  disabled={user?.isVip} // Disable if already VIP
+                  onClick={() => handleSubscribe(plan)}
+                  disabled={user?.isPremium || isLoading}
                 >
-                  {user?.isVip ? "Bạn Đã Là VIP" : plan.buttonText}
+                  {user?.isPremium ? "Bạn Đã Là VIP" : isLoading ? "Đang xử lý..." : plan.buttonText}
                 </Button>
               </div>
             </Card>

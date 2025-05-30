@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search, Filter, DollarSign, BookOpen, MapPin, Percent, UploadCloud, Brain } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useGetScholarshipsQuery } from '../../services/ScholarshipAPI';
 import { useGetScholarshipRequirementsQuery } from '../../services/ScholarshipRequirementAPI';
+import { useGetUserByIdQuery } from '../../services/UserAPI';
 
-const subjects = ["Toán", "Lý", "Hóa", "Sinh", "Văn", "Sử", "Địa", "Ngoại ngữ", "GDCD"];
+const subjects = ["Toán", "Văn", "Vật lý", "Hóa học", "Sinh", "Lịch", "Địa", "GDCD", "Tin", "Công nghệ", "Anh", "Thể dục", "Quốc phòng"];
 
 const ScholarshipsListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,6 +28,34 @@ const ScholarshipsListPage = () => {
   const { toast } = useToast();
   const { data: scholarships, isLoading, error, refetch } = useGetScholarshipsQuery(searchParams, { skip: false });
   const scholarshipsData = scholarships?.data || [];
+  const userString = sessionStorage.getItem('user');
+  const user = JSON.parse(userString); 
+  const userId = user._id;
+  const { data: userProfile } = useGetUserByIdQuery(userId);
+  const userData = userProfile?.data;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userData) {
+      // Cập nhật điểm từ dữ liệu người dùng
+      const newGrades = [
+        userData.grades10.reduce((acc, grade) => ({ ...acc, [grade.subject]: grade.score }), {}),
+        userData.grades11.reduce((acc, grade) => ({ ...acc, [grade.subject]: grade.score }), {}),
+        userData.grades12.reduce((acc, grade) => ({ ...acc, [grade.subject]: grade.score }), {})
+      ];
+      setGrades(newGrades);
+
+      // Cập nhật chứng chỉ từ dữ liệu người dùng
+      const certMap = {};
+      userData.certificates.forEach(cert => {
+        if (cert.certificateType === '68384cce854cbc7dfe36a381') certMap.ielts = cert.score;
+        if (cert.certificateType === '68384cb9854cbc7dfe36a37d') certMap.sat = cert.score;
+        if(cert.certificateType === '6839bb183595b0a00c762025') certMap.toeic = cert.score
+      });
+      console.log(certMap)
+      setCertificates(certMap);
+    }
+  }, [userData]);
 
   useEffect(() => {
     setSearchParams(prev => ({
@@ -82,6 +111,19 @@ const ScholarshipsListPage = () => {
     setIsCalculating(false);
   };
 
+  const handleShowAdvanced = () => {
+    if (!userData?.isPremium) {
+      toast({
+        title: "Tính năng dành cho thành viên VIP",
+        description: "Vui lòng nâng cấp lên VIP để sử dụng tính năng tìm kiếm nâng cao",
+        variant: "destructive"
+      });
+      navigate('/vip-subscription');
+      return;
+    }
+    setShowAdvanced(v => !v);
+  };
+
   return (
     isLoading ? <div>Loading...</div> :
     <div className="container mx-auto py-8">
@@ -111,12 +153,12 @@ const ScholarshipsListPage = () => {
       </div>
 
       <div className="mb-4 text-right">
-        <Button variant="outline" onClick={() => setShowAdvanced(v => !v)}>
+        <Button variant="outline" onClick={handleShowAdvanced}>
           {showAdvanced ? 'Ẩn tìm kiếm nâng cao' : 'Hiện tìm kiếm nâng cao'}
         </Button>
       </div>
 
-      {showAdvanced && (
+      {showAdvanced && userData?.isPremium && (
         <Card className="mb-8 p-6 bg-primary/5 dark:bg-primary/10 glass-card">
           <CardHeader className="px-0 pt-0">
             <CardTitle className="text-2xl mb-2 text-gradient-primary flex items-center">

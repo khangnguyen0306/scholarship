@@ -20,6 +20,11 @@ export const CertificateAPI = baseApi.injectEndpoints({
         url: `/certificate-types/${id}`,
       }),
     }),
+    getCertificateTypes: builder.query({
+      query: () => ({
+        url: `/certificate-types`,
+      }),
+    }),
     // createDateNofitication: builder.mutation({
     //   query: (data) => ({
     //     url: `configs/update/${data.configId}`,
@@ -38,4 +43,5 @@ export const CertificateAPI = baseApi.injectEndpoints({
 export const {
   useGetCertificateByIdQuery,
   useLazyGetCertificateByIdQuery,
+  useGetCertificateTypesQuery
 } = CertificateAPI;
