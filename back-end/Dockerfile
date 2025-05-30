@@ -1,13 +1,14 @@
-FROM node:20-alpine
+# back-end/Dockerfile
+
+FROM node:18-alpine
+
 WORKDIR /app
 
-# Copy package & cài
 COPY package*.json ./
-RUN npm install
+RUN npm install --production
 
-# Copy code
 COPY . .
 
-# Expose và chạy
-EXPOSE ${PORT}
-CMD ["node", "server.js"]
+EXPOSE 3000
+
+CMD ["node", "index.js"]
