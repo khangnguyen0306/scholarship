@@ -20,6 +20,7 @@ export const store = configureStore({
     [baseApi.reducerPath]: baseApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
     auth: AuthPerisReducer,
+
     // theme: themeReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -27,7 +28,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
       },
-    }).concat(baseApi.middleware, authApi.middleware),
+    }).concat(baseApi.middleware).concat(authApi.middleware),
 });
 
 export const Persister = persistStore(store);

@@ -20,6 +20,14 @@ export const UserAPI = baseApi.injectEndpoints({
         url: `/users/${id}`,
       }),
     }),
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: `/users/update-profile`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, arg) => [{ type: "User", id: arg.id }],
+    }),
     // createApplication: builder.mutation({
     //   query: (data) => ({
     //     url: `/applications`,
@@ -34,4 +42,5 @@ export const UserAPI = baseApi.injectEndpoints({
 
 export const {
   useGetUserByIdQuery,
+  useUpdateProfileMutation,
 } = UserAPI;
