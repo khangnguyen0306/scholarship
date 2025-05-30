@@ -4,26 +4,60 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
-import { Search, Edit, PlusCircle, Shield } from 'lucide-react';
+import { Search, PlusCircle, Shield } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../slices/authSlice';
-
-const mockPosts = [
-  { id: 'post1', title: 'Bí quyết viết luận xin học bổng ấn tượng', author: 'Nguyễn Lan Anh', date: '2025-05-15', excerpt: 'Luận văn là một phần quan trọng trong hồ sơ xin học bổng. Bài viết này sẽ chia sẻ những bí quyết giúp bạn...', image: 'blog_essay_writing.jpg', category: 'Kỹ năng' },
-  { id: 'post2', title: 'Top 5 sai lầm thường gặp khi phỏng vấn học bổng', author: 'Trần Minh Đức', date: '2025-05-10', excerpt: 'Phỏng vấn học bổng có thể là một thử thách. Tránh những sai lầm phổ biến này để tăng cơ hội thành công của bạn.', image: 'blog_interview_mistakes.jpg', category: 'Phỏng vấn' },
-  { id: 'post3', title: 'Làm thế nào để chọn trường đại học phù hợp ở nước ngoài?', author: 'Lê Thu Trang', date: '2025-05-01', excerpt: 'Chọn trường đại học là một quyết định lớn. Cân nhắc các yếu tố sau để đưa ra lựa chọn tốt nhất cho tương lai của bạn.', image: 'blog_choosing_university.jpg', category: 'Du học' },
-];
+import { useGetBlogsQuery } from '@/services/BlogAPi';
 
 const BlogPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const user = useSelector(selectCurrentUser);
+  const { data: blogs, isLoading, error } = useGetBlogsQuery();
 
-
-  const filteredPosts = mockPosts.filter(post =>
+  const filteredPosts = blogs?.data?.filter(post =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (post.author?.firstName + ' ' + post.author?.lastName).toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="mb-8 text-center">
+          <div className="h-10 w-96 mx-auto mb-4 bg-muted animate-pulse rounded-md" />
+          <div className="h-6 w-2/3 mx-auto bg-muted animate-pulse rounded-md" />
+        </div>
+        <div className="mb-8">
+          <div className="h-12 w-full mb-4 bg-muted animate-pulse rounded-md" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-full">
+              <CardHeader className="p-0">
+                <div className="w-full h-48 bg-muted animate-pulse" />
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="h-4 w-20 mb-2 bg-muted animate-pulse rounded-md" />
+                <div className="h-6 w-3/4 mb-2 bg-muted animate-pulse rounded-md" />
+                <div className="h-4 w-full mb-2 bg-muted animate-pulse rounded-md" />
+                <div className="h-4 w-1/2 bg-muted animate-pulse rounded-md" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Có lỗi xảy ra</h1>
+        <p className="text-muted-foreground mb-4">Không thể tải danh sách bài viết. Vui lòng thử lại sau.</p>
+        <Button onClick={() => window.location.reload()}>Tải lại trang</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -61,7 +95,7 @@ const BlogPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPosts.map((post, index) => (
             <motion.div
-              key={post.id}
+              key={post._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -69,21 +103,27 @@ const BlogPage = () => {
             >
               <Card className="h-full flex flex-col overflow-hidden glass-card hover:border-primary transition-all duration-300">
                 <CardHeader className="p-0">
-                  <img alt={post.title} class="w-full h-48 object-cover" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
+                  <img 
+                    alt={post.title} 
+                    className="w-full h-48 object-cover" 
+                    src={post.image || "https://images.unsplash.com/photo-1504983875-d3b163aba9e6"} 
+                  />
                 </CardHeader>
                 <CardContent className="p-6 flex-grow flex flex-col">
                   <span className="text-xs font-semibold uppercase text-primary mb-1">{post.category}</span>
                   <CardTitle className="text-xl font-semibold mb-2 text-foreground hover:text-primary transition-colors">
-                    <Link to={`/blog/${post.id}`}>{post.title}</Link>
+                    <Link to={`/blog/${post._id}`}>{post.title}</Link>
                   </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground mb-3 flex-grow">{post.excerpt}</CardDescription>
+                  <CardDescription className="text-sm text-muted-foreground mb-3 flex-grow">
+                    {post.content.substring(0, 150)}...
+                  </CardDescription>
                   <div className="text-xs text-muted-foreground">
-                    <span>Bởi {post.author}</span> | <span>{post.date}</span>
+                    <span>Bởi {post.author ? `${post.author.firstName} ${post.author.lastName}` : 'Anonymous'}</span> | <span>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
                   </div>
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
                   <Button variant="outline" asChild className="w-full">
-                    <Link to={`/blog/${post.id}`}>Đọc Thêm</Link>
+                    <Link to={`/blog/${post._id}`}>Đọc Thêm</Link>
                   </Button>
                 </CardFooter>
               </Card>
@@ -96,7 +136,7 @@ const BlogPage = () => {
           animate={{ opacity: 1 }}
           className="text-center py-10"
         >
-          <img alt="No posts found" class="mx-auto h-40 w-40 mb-4 text-muted-foreground" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
+          <img alt="No posts found" className="mx-auto h-40 w-40 mb-4 text-muted-foreground" src="https://images.unsplash.com/photo-1504983875-d3b163aba9e6" />
           <p className="text-xl text-muted-foreground">Không tìm thấy bài viết nào.</p>
         </motion.div>
       )}
@@ -114,7 +154,7 @@ const BlogPage = () => {
           <p className="text-muted-foreground mb-4">Nâng cấp lên tài khoản VIP để có thể đăng bài trên blog của chúng tôi và tiếp cận nhiều độc giả hơn!</p>
           <Button asChild className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity duration-300">
             <Link to="/vip-subscription">
-              <Edit className="mr-2 h-4 w-4" /> Nâng Cấp VIP Ngay
+              <Shield className="mr-2 h-4 w-4" /> Nâng Cấp VIP Ngay
             </Link>
           </Button>
         </motion.div>
