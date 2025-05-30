@@ -1,13 +1,13 @@
-FROM node:20-alpine
+FROM node:18-alpine
+
 WORKDIR /app
 
-# Copy package & cài
 COPY package*.json ./
+
 RUN npm install
 
-# Copy code
 COPY . .
 
-# Expose và chạy
-EXPOSE ${PORT}
+EXPOSE 3000
+
 CMD ["node", "server.js"]

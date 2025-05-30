@@ -1,15 +1,24 @@
-# 1) Build stage
-FROM node:18-alpine AS builder
+# front-end/Dockerfile
+
+# Step 1: build react app
+FROM node:18-alpine as build
+
 WORKDIR /app
 
-# Copy và cài dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy code và build
 COPY . .
-# Inject biến build-time từ ARG
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-RUN npm run build    # tạo thư mục dist/
+RUN npm run build
 
+# Step 2: serve static files bằng nginx
+FROM nginx:stable-alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Nếu bạn dùng Vite thì build output nằm trong /dist (mặc định vite)
+# Cấu hình default của nginx đủ để serve static react app rồi.
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
