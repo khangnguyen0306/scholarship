@@ -219,7 +219,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (user) {
     // Gửi email xác thực
-    const verificationUrl = `http://localhost:5173/verify-email/${emailVerificationToken}`; // chưa setting phía frontend
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${emailVerificationToken}`; // chưa setting phía frontend
 
     const mailOptions = {
       to: email,
