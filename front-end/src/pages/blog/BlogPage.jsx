@@ -48,10 +48,10 @@ const BlogPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {user?.isPremium && (
-          <Button asChild className="w-full md:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity duration-300">
-            <Link to="/blog/new-post">
-              <PlusCircle className="mr-2 h-5 w-5" /> Viết Bài Mới
+        {user?.isPremium && ( 
+          <Button asChild className="w-auto min-w-[180px] bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity duration-300">
+            <Link to="/blog/new-post" className='flex items-center justify-center'>
+              <PlusCircle className="mr-2 h-5 w-5" /> <span>Viết Bài Mới</span>
             </Link>
           </Button>
         )}

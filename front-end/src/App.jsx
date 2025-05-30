@@ -19,22 +19,9 @@ const ScholarshipDetailPage = lazy(() => import('@/pages/scholarships/Scholarshi
 const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 const VipSubscriptionPage = lazy(() => import('@/pages/VipSubscriptionPage'));
 const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
+const NewBlogPostPage = lazy(() => import('@/pages/blog/NewBlogPostPage'));
 const BlogPostPage = lazy(() => import('@/pages/blog/BlogPostPage'));
 
-const NewPostPage = lazy(() => {
-  // This is a placeholder. In a real app, you'd import a real component.
-  // For now, it resolves to a simple div.
-  // In a real app, you'd create a proper NewPostPage.jsx component
-  return Promise.resolve({
-    default: () => (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-gradient-primary mb-6">Tạo Bài Viết Mới</h1>
-        <p className="text-muted-foreground">Giao diện tạo bài viết mới sẽ được triển khai ở đây. Chỉ thành viên VIP mới có thể truy cập trang này.</p>
-        {/* Add form elements for title, content, category, etc. */}
-      </div>
-    )
-  });
-});
 
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 
@@ -94,7 +81,7 @@ function App() {
                 path="blog/new-post"
                 element={
                   <ProtectedRoute isPremium={true}>
-                    <NewPostPage />
+                    <NewBlogPostPage />
                   </ProtectedRoute>
                 }
               />
