@@ -15,6 +15,7 @@ RUN npm run build
 FROM nginx:stable-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Nếu bạn dùng Vite thì build output nằm trong /dist (mặc định vite)
 # Cấu hình default của nginx đủ để serve static react app rồi.
