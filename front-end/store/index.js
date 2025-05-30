@@ -4,6 +4,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import sessionStorage from "redux-persist/lib/storage/session";
 import { baseApi } from "../src/services/BaseAPI";
+import { authApi } from "../src/services/AuthAPI";
 // Không cần import SchoolAPI và ScholarshipAPI nữa
 
 const persistConfig = {
@@ -17,7 +18,9 @@ const AuthPerisReducer = persistReducer(persistConfig, AuthReducer);
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
+    [authApi.reducerPath]: authApi.reducer,
     auth: AuthPerisReducer,
+
     // theme: themeReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -25,7 +28,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
       },
-    }).concat(baseApi.middleware),
+    }).concat(baseApi.middleware).concat(authApi.middleware),
 });
 
 export const Persister = persistStore(store);
