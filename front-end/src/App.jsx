@@ -20,6 +20,7 @@ const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 const VipSubscriptionPage = lazy(() => import('@/pages/VipSubscriptionPage'));
 const BlogPage = lazy(() => import('@/pages/blog/BlogPage'));
 const BlogPostPage = lazy(() => import('@/pages/blog/BlogPostPage'));
+const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
 
 const NewPostPage = lazy(() => {
   // This is a placeholder. In a real app, you'd import a real component.
@@ -87,6 +88,9 @@ function App() {
 
               <Route path="profile/:userId" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
               <Route path="vip-subscription" element={<VipSubscriptionPage />} />
+              <Route path="payment-success" element={<PaymentSuccess />} />
+
+              
 
               <Route path="blog" element={<BlogPage />} />
               <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
