@@ -1,5 +1,5 @@
 import express from "express";
-import { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, updateProfile, verifyEmail, getAllUsers, getUserProfileById } from "../controllers/user.controller.js";
+import { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, updateProfile, verifyEmail, getAllUsers, getUserProfileById, adminUpdateUser, adminBlockUser, adminCreateUser } from "../controllers/user.controller.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
 const UserRoute = express.Router();
@@ -98,5 +98,8 @@ UserRoute.get("/all", protect, admin, getAllUsers);
  *                   type: string
  */
 UserRoute.get('/:id', getUserProfileById);
+UserRoute.patch('/:id/block', protect, admin, adminBlockUser);
+UserRoute.put('/:id', protect, admin, adminUpdateUser);
+UserRoute.post('/', protect, admin, adminCreateUser);
 
 export default UserRoute;

@@ -3,7 +3,9 @@ import {
   createApplication,
   getMyApplications,
   getApplicationsByScholarship,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getAllApplications,
+  getApplicationDetail
 } from "../controllers/application.controller.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -104,5 +106,42 @@ router.get("/by-scholarship", getApplicationsByScholarship);
  *         description: Cập nhật trạng thái hồ sơ thành công
  */
 router.put("/:id", updateApplicationStatus);
+
+/**
+ * @swagger
+ * /api/applications/all:
+ *   get:
+ *     summary: Lấy tất cả hồ sơ đã nộp (admin)
+ *     tags: [Application]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy tất cả hồ sơ đã nộp thành công
+ */
+router.get("/all", protect, getAllApplications);
+
+/**
+ * @swagger
+ * /api/applications/{id}:
+ *   get:
+ *     summary: Lấy chi tiết đơn nộp (admin)
+ *     tags: [Application]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID của đơn nộp
+ *     responses:
+ *       200:
+ *         description: Lấy chi tiết đơn nộp thành công
+ *       404:
+ *         description: Không tìm thấy đơn nộp
+ */
+router.get('/:id', protect, getApplicationDetail);
 
 export default router; 

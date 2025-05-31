@@ -6,7 +6,7 @@ import { baseApi } from "./BaseAPI";
 export const ScholarshipAPI = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getScholarships: builder.query({
-      query: ({ search, nationality, schoolId, gpa, ielts, sat, toeic }) => ({
+      query: ({ search, nationality, schoolId, gpa, ielts, sat, toeic } = {}) => ({
         url: "/scholarships",
         params: { search, nationality, schoolId, gpa, ielts, sat, toeic }
       }),
@@ -20,17 +20,29 @@ export const ScholarshipAPI = baseApi.injectEndpoints({
         url: `/scholarships/${id}`,
       }),
     }),
-    // createDateNofitication: builder.mutation({
-    //   query: (data) => ({
-    //     url: `configs/update/${data.configId}`,
-    //     method: "POST",
-    //     body: {
-    //       key: data.key,
-    //       value: data.value
-    //     }
-    //   }),
-    //   invalidatesTags: [{ type: "Config", id: "LIST" }],
-    // }),
+    createScholarship: builder.mutation({
+      query: (data) => ({
+        url: `scholarships`,
+        method: "POST",
+        body: data
+      }),
+      invalidatesTags: [{ type: "Scholarship", id: "LIST" }],
+    }),
+    updateScholarship: builder.mutation({
+      query: (data) => ({
+        url: `scholarships/${data.id}`,
+        method: "PUT",
+        body: data
+      }),
+      invalidatesTags: [{ type: "Scholarship", id: "LIST" }],
+    }),
+    deleteScholarship: builder.mutation({
+      query: (id) => ({
+        url: `scholarships/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Scholarship", id: "LIST" }],
+    }),
   }),
 //   overrideExisting: false,
 });
@@ -40,4 +52,7 @@ export const {
   useLazyGetScholarshipsQuery,
   useGetScholarshipByIdQuery,
   useLazyGetScholarshipByIdQuery,
+  useCreateScholarshipMutation,
+  useUpdateScholarshipMutation,
+  useDeleteScholarshipMutation,
 } = ScholarshipAPI;

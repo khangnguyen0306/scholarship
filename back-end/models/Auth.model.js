@@ -17,6 +17,7 @@ const AccountSchema = new Schema({
   emailVerificationToken: { type: String },
   profileImage: { type: String },
   isPremium: { type: Boolean, default: false },
+  isBlocked: { type: Boolean, default: false },
   grades10: [{
     subject: { type: String, required: true },
     score: { type: Number, required: true }

@@ -35,28 +35,33 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  BookOpen, 
-  Award, 
-  BarChart2, 
-  Settings, 
-  Edit, 
-  Trash2, 
-  PlusCircle, 
-  Eye, 
-  School as University, 
-  GraduationCap, 
-  UserCog, 
-  DollarSign, 
-  CalendarDays, 
+import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import {
+  Users,
+  BookOpen,
+  Award,
+  BarChart2,
+  Settings,
+  Edit,
+  Trash2,
+  PlusCircle,
+  Eye,
+  School as University,
+  GraduationCap,
+  UserCog,
+  DollarSign,
+  CalendarDays,
   Briefcase,
-  CheckCircle, 
+  CheckCircle,
   XCircle,
   ShieldCheck
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useBlockUserMutation, useCreateUserMutation, useEditUserMutation, useGetAllUsersQuery } from '../services/UserAPI';
+import { useCreateSchoolMutation, useDeleteSchoolMutation, useGetSchoolsQuery, useUpdateSchoolMutation } from '../services/SchoolAPI';
+import { useCreateScholarshipMutation, useDeleteScholarshipMutation, useGetScholarshipsQuery, useUpdateScholarshipMutation } from '../services/ScholarshipAPI';
+import { useGetScholarshipRequirementsQuery } from '../services/ScholarRequirement';
+import { useGetAllApplicationsQuery, useGetApplicationDetailQuery } from '../services/ApplicationAPI';
 
 const AdminDashboardPage = () => {
   const location = useLocation();
@@ -73,12 +78,13 @@ const AdminDashboardPage = () => {
     { path: '/admin/manage-users', label: 'Quản Lý Người Dùng', icon: <UserCog className="h-5 w-5" /> },
     { path: '/admin/manage-schools', label: 'Quản Lý Trường', icon: <University className="h-5 w-5" /> },
     { path: '/admin/manage-scholarships', label: 'Quản Lý Học Bổng', icon: <GraduationCap className="h-5 w-5" /> },
+    { path: '/admin/manage-applications', label: 'Quản Lý Hồ Sơ', icon: <Briefcase className="h-5 w-5" /> },
     { path: '/admin/settings', label: 'Cài Đặt', icon: <Settings className="h-5 w-5" /> },
   ];
 
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-10rem)] gap-6">
-      <motion.aside 
+      <motion.aside
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -104,7 +110,7 @@ const AdminDashboardPage = () => {
         </nav>
       </motion.aside>
 
-      <motion.main 
+      <motion.main
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -118,7 +124,7 @@ const AdminDashboardPage = () => {
 
 export const AdminOverview = () => (
   <div>
-    <motion.h1 
+    <motion.h1
       initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
       className="text-3xl font-bold mb-8 text-gradient-primary"
     >
@@ -169,6 +175,7 @@ const initialUsers = [
   { id: 'usr002', name: 'Trần Thị Bình', email: 'binh.tt@example.com', role: 'user', joinedDate: '2024-02-20', isVip: false, applications: 2 },
   { id: 'usr003', name: 'Lê Văn Cường', email: 'cuong.lv@example.com', role: 'admin', joinedDate: '2023-12-01', isVip: true, applications: 0 },
 ];
+
 const initialSchools = [
   { id: 'sch001', name: 'Đại học Bách Khoa Hà Nội', location: 'Hà Nội', website: 'hust.edu.vn', scholarshipsCount: 15 },
   { id: 'sch002', name: 'Đại học Kinh Tế Quốc Dân', location: 'Hà Nội', website: 'neu.edu.vn', scholarshipsCount: 10 },
@@ -183,6 +190,7 @@ const initialScholarships = [
 // Shared Form Dialog Component
 const CrudFormDialog = ({ open, onOpenChange, entity, onSave, formFields, entityName, currentData = null }) => {
   const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -196,27 +204,67 @@ const CrudFormDialog = ({ open, onOpenChange, entity, onSave, formFields, entity
       }, {});
       setFormData(initialData);
     }
+    setErrors({});
   }, [currentData, formFields, open]); // Reset form when dialog opens or currentData changes
 
   const handleChange = (e) => {
     const { id, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [id]: type === 'checkbox' ? checked : value }));
+    setErrors(prev => ({ ...prev, [id]: undefined }));
   };
 
   const handleSelectChange = (id, value) => {
     setFormData(prev => ({ ...prev, [id]: value }));
+    setErrors(prev => ({ ...prev, [id]: undefined }));
   }
+
+  const validate = () => {
+    const newErrors = {};
+    formFields.forEach(field => {
+      if (field.required && (!formData[field.id] || (Array.isArray(formData[field.id]) && formData[field.id].length === 0))) {
+        newErrors[field.id] = `${field.label} là bắt buộc.`;
+      }
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    if (!validate()) {
+      // Hiển thị toast lỗi tổng hợp
+      const missingFields = formFields.filter(field => field.required && (!formData[field.id] || (Array.isArray(formData[field.id]) && formData[field.id].length === 0))).map(field => field.label);
+      toast({
+        title: 'Vui lòng nhập đầy đủ các trường bắt buộc!',
+        description: missingFields.length ? `Thiếu: ${missingFields.join(', ')}` : undefined,
+        className: 'bg-red-500 text-white'
+      });
+      return;
+    }
+    let data = { ...formData };
+    // Chuyển benefits textarea thành array
+    if (typeof data.benefits === 'string') {
+      data.benefits = data.benefits.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    // Chuyển requirements select-multiple thành array
+    if (Array.isArray(data.requirements)) {
+      // đã là array
+    } else if (typeof data.requirements === 'string') {
+      data.requirements = [data.requirements];
+    } else if (e.target.requirements && e.target.requirements.selectedOptions) {
+      data.requirements = Array.from(e.target.requirements.selectedOptions).map(opt => opt.value);
+    }
+    onSave(data);
     onOpenChange(false); // Close dialog after save
-    toast({ title: `${currentData ? 'Cập nhật' : 'Thêm mới'} ${entityName} thành công!` });
+    // toast({
+    //   title: `${currentData ? 'Cập nhật' : 'Thêm mới'} ${entityName} thành công!`,
+    //   className: "bg-green-500 text-white"
+    // });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[70vw] max-h-[90vh] overflow-y-auto hide-scrollbar">
         <DialogHeader>
           <DialogTitle>{currentData ? `Sửa ${entityName}` : `Thêm ${entityName} Mới`}</DialogTitle>
           <DialogDescription>
@@ -226,20 +274,45 @@ const CrudFormDialog = ({ open, onOpenChange, entity, onSave, formFields, entity
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           {formFields.map(field => (
             <div className="grid grid-cols-4 items-center gap-4" key={field.id}>
-              <Label htmlFor={field.id} className="text-right col-span-1">{field.label}</Label>
+              <Label htmlFor={field.id} className="text-right col-span-1">{field.label}{field.required && <span className="text-red-500 ml-1">*</span>}</Label>
               {field.type === 'textarea' ? (
-                <Textarea id={field.id} value={formData[field.id] || ''} onChange={handleChange} className="col-span-3" placeholder={field.placeholder} />
+                <>
+                  <Textarea id={field.id} value={formData[field.id] || ''} onChange={handleChange} className="col-span-3" placeholder={field.placeholder} />
+                  {errors[field.id] && <div className="col-span-4 text-red-500 text-xs mt-1 ml-[25%]">{errors[field.id]}</div>}
+                </>
               ) : field.type === 'checkbox' ? (
-                <Checkbox id={field.id} checked={!!formData[field.id]} onCheckedChange={(checked) => handleSelectChange(field.id, checked)} className="col-span-3" />
+                <>
+                  <Checkbox id={field.id} checked={!!formData[field.id]} onCheckedChange={(checked) => handleSelectChange(field.id, checked)} className="col-span-3" />
+                  {errors[field.id] && <div className="col-span-4 text-red-500 text-xs mt-1 ml-[25%]">{errors[field.id]}</div>}
+                </>
               ) : field.type === 'select' ? (
-                 <select id={field.id} value={formData[field.id] || ''} onChange={handleChange} className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                <>
+                  <select id={field.id} value={formData[field.id] || ''} onChange={handleChange} className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
                     <option value="" disabled>{field.placeholder || "Chọn một tùy chọn"}</option>
-                    {field.options.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                    {(field.options || []).map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
-                 </select>
+                  </select>
+                  {errors[field.id] && <div className="col-span-4 text-red-500 text-xs mt-1 ml-[25%]">{errors[field.id]}</div>}
+                </>
+              ) : field.type === 'select-multiple' ? (
+                <>
+                  <select id={field.id} multiple value={formData[field.id] || []} onChange={e => {
+                    const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
+                    setFormData(prev => ({ ...prev, [field.id]: selected }));
+                    setErrors(prev => ({ ...prev, [field.id]: undefined }));
+                  }} className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                    {(field.options || []).map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                  {errors[field.id] && <div className="col-span-4 text-red-500 text-xs mt-1 ml-[25%]">{errors[field.id]}</div>}
+                </>
               ) : (
-                <Input id={field.id} type={field.type} value={formData[field.id] || ''} onChange={handleChange} className="col-span-3" placeholder={field.placeholder} />
+                <>
+                  <Input id={field.id} type={field.type} value={formData[field.id] || ''} onChange={handleChange} className="col-span-3" placeholder={field.placeholder} />
+                  {errors[field.id] && <div className="col-span-4 text-red-500 text-xs mt-1 ml-[25%]">{errors[field.id]}</div>}
+                </>
               )}
             </div>
           ))}
@@ -255,33 +328,76 @@ const CrudFormDialog = ({ open, onOpenChange, entity, onSave, formFields, entity
 
 // Manage Users Page
 export const ManageUsersPage = () => {
-  const [users, setUsers] = useState(initialUsers);
+  // const [users, setUsers] = useState(initialUsers);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  // console.log(editingUser)
   const { toast } = useToast();
-
+  const { data: users, isLoading, error, refetch } = useGetAllUsersQuery();
+  const [editUser, { isLoading: isEditing }] = useEditUserMutation();
+  const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
+  const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation();
   const userFormFields = [
-    { id: 'name', label: 'Tên', type: 'text', placeholder: 'Nguyễn Văn A' },
+    { id: 'firstName', label: 'Tên', type: 'text', placeholder: 'Nguyễn Văn A' },
+    { id: 'lastName', label: 'Họ', type: 'text', placeholder: 'Nguyễn Văn A' },
     { id: 'email', label: 'Email', type: 'email', placeholder: 'email@example.com' },
-    { id: 'role', label: 'Vai trò', type: 'select', options: [{value: 'user', label: 'User'}, {value: 'admin', label: 'Admin'}], placeholder: "Chọn vai trò" },
-    { id: 'isVip', label: 'Tài khoản VIP', type: 'checkbox' },
+    { id: 'role', label: 'Vai trò', type: 'select', options: [{ value: 'student', label: 'student' }, { value: 'admin', label: 'admin' }], placeholder: "Chọn vai trò" },
+    { id: 'isPremium', label: 'Tài khoản VIP', type: 'checkbox' },
   ];
 
-  const handleSaveUser = (userData) => {
-    if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...userData } : u));
-      setEditingUser(null);
-    } else {
-      setUsers([...users, { ...userData, id: `usr${Date.now()}`, joinedDate: new Date().toISOString().split('T')[0], applications: 0 }]);
+
+
+  const handleSaveUser = async (userData) => {
+    try {
+      if (editingUser) {
+        const res = await editUser({ ...userData, id: userData._id });
+        if (res.data.success === true) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+        refetch();
+      } else {
+        const res = await createUser(userData);
+        if (res.data.success === true) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+        refetch();
+      }
+    } catch (error) {
+      toast({
+        title: error.data.message,
+        className: "bg-red-500 text-white"
+      });
+      console.log(error)
     }
   };
 
-  const handleDeleteUser = (userId) => {
-    setUsers(users.filter(u => u.id !== userId));
-    toast({ title: "Xóa người dùng thành công!", variant: "destructive" });
+  const handleDeleteUser = async (userId) => {
+    // console.log(userId)
+    try {
+      const res = await blockUser(userId);
+      // console.log(res)
+      toast({
+        title: res.data.message,
+        className: "bg-green-500 text-white"
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: error.data.message,
+        className: "bg-red-500 text-white"
+      });
+      console.log(error)
+    }
   };
 
   return (
+
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gradient-primary">Quản Lý Người Dùng</h1>
@@ -298,19 +414,21 @@ export const ManageUsersPage = () => {
               <TableHead>Vai trò</TableHead>
               <TableHead>VIP</TableHead>
               <TableHead>Ngày tham gia</TableHead>
-              <TableHead>Đơn đã nộp</TableHead>
+              <TableHead>Hoạt động</TableHead>
               <TableHead className="text-right">Hành động</TableHead>
             </TableRow>
           </TableHeader>
+          {isLoading && <TableCell colSpan={7} className="text-center">Loading...</TableCell>}
+          {error && <TableCell colSpan={7} className="text-center">Error: {error.message}</TableCell>}
           <TableBody>
-            {users.map((user) => (
+            {users?.data?.filter(user => user.role !== 'admin').map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell className="font-medium">{user.firstName} {user.lastName}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell><span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{user.role}</span></TableCell>
-                <TableCell>{user.isVip ? <CheckCircle className="text-green-500 h-5 w-5"/> : <XCircle className="text-red-500 h-5 w-5"/>}</TableCell>
-                <TableCell>{new Date(user.joinedDate).toLocaleDateString('vi-VN')}</TableCell>
-                <TableCell>{user.applications}</TableCell>
+                <TableCell>{user.isPremium ? <CheckCircle className="text-green-500 h-5 w-5" /> : <XCircle className="text-red-500 h-5 w-5" />}</TableCell>
+                <TableCell>{new Date(user.createdAt).toLocaleDateString('vi-VN')}</TableCell>
+                <TableCell>{!user.isBlocked ? <CheckCircle className="text-green-500 h-5 w-5" /> : <XCircle className="text-red-500 h-5 w-5" />}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button variant="ghost" size="icon" onClick={() => { setEditingUser(user); setIsFormOpen(true); }}>
                     <Edit className="h-4 w-4" />
@@ -330,7 +448,7 @@ export const ManageUsersPage = () => {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Hủy</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleDeleteUser(user._id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -340,8 +458,8 @@ export const ManageUsersPage = () => {
           </TableBody>
         </Table>
       </Card>
-      <CrudFormDialog 
-        open={isFormOpen} 
+      <CrudFormDialog
+        open={isFormOpen}
         onOpenChange={setIsFormOpen}
         entity={editingUser}
         onSave={handleSaveUser}
@@ -356,33 +474,75 @@ export const ManageUsersPage = () => {
 
 // Manage Schools Page
 export const ManageSchoolsPage = () => {
-  const [schools, setSchools] = useState(initialSchools);
+  // const [schools, setSchools] = useState(initialSchools);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSchool, setEditingSchool] = useState(null);
   const { toast } = useToast();
+  const { data: schools, isLoading, error, refetch } = useGetSchoolsQuery();
+  const [createSchool, { isLoading: isCreating }] = useCreateSchoolMutation();
+  const [updateSchool, { isLoading: isUpdating }] = useUpdateSchoolMutation();
+  const [deleteSchool, { isLoading: isDeleting }] = useDeleteSchoolMutation();
 
   const schoolFormFields = [
     { id: 'name', label: 'Tên Trường', type: 'text', placeholder: 'Đại học Quốc Tế' },
-    { id: 'location', label: 'Địa điểm', type: 'text', placeholder: 'TP. Hồ Chí Minh' },
-    { id: 'website', label: 'Website', type: 'text', placeholder: 'www.example.edu.vn' },
-    { id: 'description', label: 'Mô tả', type: 'textarea', placeholder: 'Mô tả ngắn về trường...' },
-    { id: 'logoUrl', label: 'Link Logo', type: 'text', placeholder: 'https://link.to/logo.png' },
+    { id: 'address', label: 'Địa chỉ', type: 'text', placeholder: 'Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội' },
+    { id: 'website', label: 'Website', type: 'text', placeholder: 'https://hust.edu.vn' },
+    { id: 'description', label: 'Mô tả', type: 'textarea', placeholder: 'Trường đại học kỹ thuật hàng đầu Việt Nam.' },
+    { id: 'logo', label: 'Logo', type: 'text', placeholder: 'https://domain.com/logo.png' },
+    { id: 'image', label: 'Ảnh bìa', type: 'text', placeholder: 'https://domain.com/image.png' },
+    { id: 'foundedYear', label: 'Năm thành lập', type: 'number', placeholder: '1956' },
+    { id: 'email', label: 'Email', type: 'email', placeholder: 'contact@hust.edu.vn' },
+    { id: 'nationality', label: 'Quốc tịch', type: 'text', placeholder: 'Việt Nam' },
   ];
 
-  const handleSaveSchool = (schoolData) => {
-    if (editingSchool) {
-      setSchools(schools.map(s => s.id === editingSchool.id ? { ...s, ...schoolData } : s));
-      setEditingSchool(null);
-    } else {
-      setSchools([...schools, { ...schoolData, id: `sch${Date.now()}`, scholarshipsCount: 0 }]);
+  const handleSaveSchool = async (schoolData) => {
+    console.log(schoolData)
+    try {
+      if (editingSchool) {
+        const res = await updateSchool({ ...schoolData, id: schoolData._id });
+        if (res.data.success === true) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+        refetch();
+      } else {
+        const res = await createSchool(schoolData);
+        if (res.data.success === true) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+        refetch();
+      }
+    } catch (error) {
+      toast({
+        title: error.data.message,
+        className: "bg-red-500 text-white"
+      });
+      console.log(error)
     }
   };
 
-  const handleDeleteSchool = (schoolId) => {
-    setSchools(schools.filter(s => s.id !== schoolId));
-    toast({ title: "Xóa trường học thành công!", variant: "destructive" });
+  const handleDeleteSchool = async (schoolId) => {
+    try {
+      const res = await deleteSchool(schoolId);
+      toast({
+        title: res.data.message,
+        className: "bg-green-500 text-white"
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: error.data.message,
+        className: "bg-red-500 text-white"
+      });
+      console.log(error)
+    }
   };
-  
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -395,27 +555,33 @@ export const ManageSchoolsPage = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Logo</TableHead>
               <TableHead>Tên Trường</TableHead>
-              <TableHead>Địa điểm</TableHead>
+              <TableHead>Quốc tịch</TableHead>
               <TableHead>Website</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Số học bổng</TableHead>
               <TableHead className="text-right">Hành động</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {schools.map((school) => (
+            {isLoading && <TableCell colSpan={7} className="text-center">Loading...</TableCell>}
+            {error && <TableCell colSpan={7} className="text-center">Error: {error.message}</TableCell>}
+            {schools?.data?.map((school) => (
               <TableRow key={school.id}>
+                <TableCell className="font-medium"><img src={school.logo} alt={school.name} className="w-10 h-10 rounded-full" /></TableCell>
                 <TableCell className="font-medium">{school.name}</TableCell>
-                <TableCell>{school.location}</TableCell>
+                <TableCell>{school.nationality}</TableCell>
                 <TableCell><a href={`https://${school.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{school.website}</a></TableCell>
-                <TableCell>{school.scholarshipsCount}</TableCell>
+                <TableCell>{school.email}</TableCell>
+                <TableCell>{school.scholarshipCount}</TableCell>
                 <TableCell className="text-right space-x-2">
-                   <Button variant="ghost" size="icon" onClick={() => { setEditingSchool(school); setIsFormOpen(true); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setEditingSchool(school); setIsFormOpen(true); }}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                       <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -423,12 +589,12 @@ export const ManageSchoolsPage = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
                         <AlertDialogDescription>
-                         Hành động này không thể hoàn tác. Trường "{school.name}" và tất cả học bổng liên quan sẽ bị xóa.
+                          Hành động này không thể hoàn tác. Trường "{school.name}" và tất cả học bổng liên quan sẽ bị xóa.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Hủy</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteSchool(school.id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleDeleteSchool(school._id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -438,8 +604,8 @@ export const ManageSchoolsPage = () => {
           </TableBody>
         </Table>
       </Card>
-       <CrudFormDialog 
-        open={isFormOpen} 
+      <CrudFormDialog
+        open={isFormOpen}
         onOpenChange={setIsFormOpen}
         entity={editingSchool}
         onSave={handleSaveSchool}
@@ -451,40 +617,116 @@ export const ManageSchoolsPage = () => {
   );
 };
 
-
 // Manage Scholarships Page
 export const ManageScholarshipsPage = () => {
-  const [scholarships, setScholarships] = useState(initialScholarships);
+  // const [scholarships, setScholarships] = useState(initialScholarships);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingScholarship, setEditingScholarship] = useState(null);
   const { toast } = useToast();
-  
+  const { data: schools, isLoading: isLoadingSchools, error: errorSchools, refetch: refetchSchools } = useGetSchoolsQuery();
+  const { data: scholarships, isLoading: isLoadingScholarships, error: errorScholarships, refetch: refetchScholarships } = useGetScholarshipsQuery();
+  const { data: scholarshipRequirements, isLoading: isLoadingScholarshipRequirements, error: errorScholarshipRequirements, refetch: refetchScholarshipRequirements } = useGetScholarshipRequirementsQuery();
+  const [createScholarship, { isLoading: isCreating }] = useCreateScholarshipMutation();
+  const [updateScholarship, { isLoading: isUpdating }] = useUpdateScholarshipMutation();
+  const [deleteScholarship, { isLoading: isDeleting }] = useDeleteScholarshipMutation();
+
   // Get school options for the form
-  const schoolOptions = initialSchools.map(school => ({ value: school.id, label: school.name }));
+  // const schoolOptions = schools?.data?.map(school => ({ value: school._id, label: school.name }));
 
   const scholarshipFormFields = [
+    { id: 'school', label: 'Trường', type: 'select', options: schools?.data?.map(school => ({ value: school._id, label: school.name })) || [], placeholder: 'Chọn trường học' },
     { id: 'name', label: 'Tên Học Bổng', type: 'text', placeholder: 'Học bổng ABC' },
-    { id: 'schoolId', label: 'Trường', type: 'select', options: schoolOptions, placeholder: "Chọn trường học" },
-    { id: 'amount', label: 'Giá trị', type: 'text', placeholder: 'VD: 100% học phí, 50.000.000 VNĐ' },
-    { id: 'deadline', label: 'Hạn nộp', type: 'date' },
+    { id: 'value', label: 'Giá trị', type: 'text', placeholder: 'VD: 100% học phí, 50.000.000 VNĐ' },
     { id: 'field', label: 'Lĩnh vực', type: 'text', placeholder: 'Kỹ thuật, Kinh tế,...' },
+    { id: 'location', label: 'Địa điểm', type: 'text', placeholder: 'Hà Nội, TP.HCM,...' },
+    { id: 'deadline', label: 'Hạn nộp', type: 'date' },
     { id: 'description', label: 'Mô tả', type: 'textarea', placeholder: 'Mô tả chi tiết về học bổng...' },
-    { id: 'requirements', label: 'Yêu cầu', type: 'textarea', placeholder: 'Liệt kê các yêu cầu, mỗi yêu cầu một dòng.' },
+    { id: 'detail', label: 'Chi tiết', type: 'textarea', placeholder: 'Thông tin chi tiết về học bổng...' },
+    { id: 'benefits', label: 'Lợi ích', type: 'textarea', placeholder: 'Liệt kê các lợi ích, mỗi lợi ích một dòng.' },
+    { id: 'applicationMethod', label: 'Cách nộp', type: 'text', placeholder: 'Hướng dẫn nộp đơn...' },
+    {
+      id: 'requirements', label: 'Yêu cầu', type: 'select', options: (
+        scholarshipRequirements?.data?.map(r => ({
+          value: r._id,
+          label: [
+            r.minGPA ? `GPA ≥ ${r.minGPA}` : null,
+            ...(r.minCertificateScores?.length ? r.minCertificateScores.map(mcs => `${mcs.certificateName} ≥ ${mcs.minScore}`) : []),
+            r.requiredCertificates?.length ? r.requiredCertificates.map(c => c.name).join(', ') : null,
+            r.otherConditions ? r.otherConditions : null
+          ].filter(Boolean).join(' | ')
+        })) || []
+      ), placeholder: 'Chọn yêu cầu học bổng'
+    },
   ];
 
-  const handleSaveScholarship = (scholarshipData) => {
-    const schoolName = initialSchools.find(s => s.id === scholarshipData.schoolId)?.name || 'Không rõ';
-    if (editingScholarship) {
-      setScholarships(scholarships.map(s => s.id === editingScholarship.id ? { ...s, ...scholarshipData, schoolName } : s));
-      setEditingScholarship(null);
-    } else {
-      setScholarships([...scholarships, { ...scholarshipData, id: `schol${Date.now()}`, schoolName }]);
+  const handleSaveScholarship = async (scholarshipData) => {
+    console.log(scholarshipData)
+    try {
+      if (editingScholarship) {
+        const res = await updateScholarship({ ...scholarshipData, id: scholarshipData._id });
+        if (res.data && res.data.status === 201) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+        if (res.error && res.error.status == 400) {
+          let msg = res.error.data.message;
+          if (Array.isArray(res.error.data.missingFields)) {
+            msg = `Thiếu các trường: ${res.error.data.missingFields.join(', ')}`;
+          }
+          toast({
+            title: msg,
+            className: "bg-red-500 text-white"
+          });
+        }
+        refetchScholarships();
+      } else {
+        const res = await createScholarship(scholarshipData);
+        console.log(res)
+        if (res.data && res.data.status === 201) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+        if (res.error && res.error.status === 400) {
+          let msg = res.error.data.message;
+          if (Array.isArray(res.error.data.missingFields)) {
+            msg = `Thiếu các trường: ${res.error.data.missingFields.join(', ')}`;
+          }
+          toast({
+            title: msg,
+            className: "bg-red-500 text-white"
+          });
+        }
+        refetchScholarships();
+      }
+    } catch (error) {
+      console.log(error)
+      toast({
+        title: error?.error?.data?.message || 'Có lỗi xảy ra!',
+        className: "bg-red-500 text-white"
+      });
+      console.log(error)
     }
   };
 
-  const handleDeleteScholarship = (scholarshipId) => {
-    setScholarships(scholarships.filter(s => s.id !== scholarshipId));
-    toast({ title: "Xóa học bổng thành công!", variant: "destructive" });
+  const handleDeleteScholarship = async (scholarshipId) => {
+    try {
+      const res = await deleteScholarship(scholarshipId);
+      toast({
+        title: res.data.message,
+        className: "bg-green-500 text-white"
+      });
+      refetchScholarships();
+    } catch (error) {
+      toast({
+        title: error.data.message,
+        className: "bg-red-500 text-white"
+      });
+      console.log(error)
+    }
   };
 
   return (
@@ -508,20 +750,22 @@ export const ManageScholarshipsPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {scholarships.map((scholarship) => (
-              <TableRow key={scholarship.id}>
+            {isLoadingScholarships || isLoadingScholarshipRequirements || isLoadingSchools && <TableCell colSpan={7} className="text-center">Loading...</TableCell>}
+            {errorScholarships || errorScholarshipRequirements && <TableCell colSpan={7} className="text-center">Error: {errorScholarships.message}</TableCell>}
+            {scholarships?.data?.map((scholarship) => (
+              <TableRow key={scholarship._id}>
                 <TableCell className="font-medium">{scholarship.name}</TableCell>
-                <TableCell>{scholarship.schoolName}</TableCell>
-                <TableCell>{scholarship.amount}</TableCell>
+                <TableCell>{scholarship.school.name}</TableCell>
+                <TableCell>{scholarship.value}</TableCell>
                 <TableCell>{new Date(scholarship.deadline).toLocaleDateString('vi-VN')}</TableCell>
                 <TableCell>{scholarship.field}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button variant="ghost" size="icon" onClick={() => { setEditingScholarship(scholarship); setIsFormOpen(true); }}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                   <AlertDialog>
+                  <AlertDialog>
                     <AlertDialogTrigger asChild>
-                       <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -529,12 +773,12 @@ export const ManageScholarshipsPage = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
                         <AlertDialogDescription>
-                         Hành động này không thể hoàn tác. Học bổng "{scholarship.name}" sẽ bị xóa vĩnh viễn.
+                          Hành động này không thể hoàn tác. Học bổng "{scholarship.name}" sẽ bị xóa vĩnh viễn.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Hủy</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteScholarship(scholarship.id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleDeleteScholarship(scholarship._id)} className="bg-destructive hover:bg-destructive/90">Xóa</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -544,8 +788,8 @@ export const ManageScholarshipsPage = () => {
           </TableBody>
         </Table>
       </Card>
-      <CrudFormDialog 
-        open={isFormOpen} 
+      <CrudFormDialog
+        open={isFormOpen}
         onOpenChange={setIsFormOpen}
         entity={editingScholarship}
         onSave={handleSaveScholarship}
@@ -553,6 +797,144 @@ export const ManageScholarshipsPage = () => {
         entityName="Học Bổng"
         currentData={editingScholarship}
       />
+    </div>
+  );
+};
+
+export const ManageApplicationsPage = () => {
+  const { data, isLoading, error, refetch } = useGetAllApplicationsQuery();
+
+  const navigate = useNavigate();
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gradient-primary">Quản Lý Hồ Sơ Đã Nộp</h1>
+        <Button onClick={refetch} className="bg-gradient-to-r from-primary to-accent">Làm mới</Button>
+      </div>
+      <Card className="glass-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Học bổng</TableHead>
+              <TableHead>Người nộp</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead>Ngày nộp</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && <TableCell colSpan={5} className="text-center">Loading...</TableCell>}
+            {error && <TableCell colSpan={5} className="text-center">Error: {error.message}</TableCell>}
+            {data?.data?.map(app => (
+              <TableRow key={app._id}>
+                <TableCell>
+                  <span className="text-blue-600 hover:underline cursor-pointer" onClick={() => navigate(`/admin/application/${app._id}`)}>{app.scholarshipName}</span>
+                </TableCell>
+                <TableCell>{app.studentName}</TableCell>
+                <TableCell>{app.email}</TableCell>
+                <TableCell>{app.status}</TableCell>
+                <TableCell>{new Date(app.createdAt).toLocaleDateString('vi-VN')}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
+  );
+};
+
+// Trang chi tiết đơn nộp
+export const ApplicationDetailPage = () => {
+  const { id } = useParams();
+  const { data, isLoading, error } = useGetApplicationDetailQuery(id);
+  const app = data?.data;
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!app) return <div>Không tìm thấy đơn nộp</div>;
+  return (
+    <div className="w-full min-h-screen mt-0 p-6 bg-white rounded-none shadow-none">
+      <h2 className="text-2xl font-bold mb-4 text-gradient-primary">Chi Tiết Đơn Nộp</h2>
+      <div className="mb-4">
+        <strong>Học bổng:</strong> {app.scholarship?.name}
+      </div>
+      <div className="mb-4">
+        <strong>Trường:</strong> {app.scholarship?.school?.name}
+        {app.scholarship?.school?.logo && (
+          <img src={app.scholarship.school.logo} alt="logo" className="w-10 h-10 rounded-full inline-block ml-2 align-middle" />
+        )}
+      </div>
+      <div className="mb-4">
+        <strong>Người nộp:</strong> {app.student?.firstName} {app.student?.lastName}
+      </div>
+      <div className="mb-4">
+        <strong>Email:</strong> {app.student?.email}
+      </div>
+      <div className="mb-4">
+        <strong>Trạng thái:</strong> {app.status}
+      </div>
+      <div className="mb-4">
+        <strong>Ngày nộp:</strong> {new Date(app.createdAt).toLocaleDateString('vi-VN')}
+      </div>
+      <div className="mb-4">
+        <strong>Giá trị học bổng:</strong> {app.scholarship?.value}
+      </div>
+      <div className="mb-4">
+        <strong>Lĩnh vực:</strong> {app.scholarship?.field}
+      </div>
+      <div className="mb-4">
+        <strong>Địa điểm:</strong> {app.scholarship?.location}
+      </div>
+      <div className="mb-4">
+        <strong>Hạn nộp:</strong> {app.scholarship?.deadline && new Date(app.scholarship.deadline).toLocaleDateString('vi-VN')}
+      </div>
+      <div className="mb-4">
+        <strong>Mô tả:</strong> {app.scholarship?.description}
+      </div>
+      <div className="mb-4">
+        <strong>Chi tiết:</strong> {app.scholarship?.detail}
+      </div>
+      <div className="mb-4">
+        <strong>Lợi ích:</strong>
+        <ul className="list-disc ml-6">
+          {app.scholarship?.benefits?.map((b, i) => <li key={i}>{b}</li>)}
+        </ul>
+      </div>
+      <div className="mb-4">
+        <strong>Phương thức nộp:</strong> {app.scholarship?.applicationMethod}
+      </div>
+      <div className="mb-4">
+        <strong>Bài luận:</strong> {app.essay}
+      </div>
+      <div className="mb-4">
+        <strong>Tài liệu đính kèm:</strong>
+        <ul className="list-disc ml-6">
+          {app.documents?.map((doc, i) => <li key={i}><a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{doc.name}</a></li>)}
+        </ul>
+      </div>
+      <div className="mb-4">
+        <strong>Bảng điểm lớp 10:</strong>
+        <ul className="list-disc ml-6">
+          {app.profileSnapshot?.grades10?.map((g, i) => <li key={i}>{g.subject}: {g.score}</li>)}
+        </ul>
+      </div>
+      <div className="mb-4">
+        <strong>Bảng điểm lớp 11:</strong>
+        <ul className="list-disc ml-6">
+          {app.profileSnapshot?.grades11?.map((g, i) => <li key={i}>{g.subject}: {g.score}</li>)}
+        </ul>
+      </div>
+      <div className="mb-4">
+        <strong>Bảng điểm lớp 12:</strong>
+        <ul className="list-disc ml-6">
+          {app.profileSnapshot?.grades12?.map((g, i) => <li key={i}>{g.subject}: {g.score}</li>)}
+        </ul>
+      </div>
+      <div className="mb-4">
+        <strong>Chứng chỉ:</strong>
+        <ul className="list-disc ml-6">
+          {app.profileSnapshot?.certificates?.map((c, i) => <li key={i}>ID: {c.certificateType?.name || c.certificateType} - Điểm: {c.score} - Ngày: {c.date && new Date(c.date).toLocaleDateString('vi-VN')}</li>)}
+        </ul>
+      </div>
     </div>
   );
 };
@@ -579,7 +961,7 @@ export const AdminSettingsPage = () => {
     e.preventDefault();
     // Here you would typically save settings to a backend/DB
     console.log("Settings saved:", settings);
-    toast({ title: "Cài đặt đã được lưu!"});
+    toast({ title: "Cài đặt đã được lưu!" });
   };
 
   return (
@@ -597,7 +979,7 @@ export const AdminSettingsPage = () => {
               <Input id="defaultEmail" type="email" value={settings.defaultEmail} onChange={handleInputChange} />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="maxUploadSize">Kích Thước Upload Tối Đa (MB): {settings.maxUploadSize}MB</Label>
             <Slider
@@ -615,7 +997,7 @@ export const AdminSettingsPage = () => {
               Bật Chế Độ Bảo Trì
             </Label>
           </div>
-          
+
           {settings.maintenanceMode && (
             <div className="space-y-2 p-4 border border-yellow-500 bg-yellow-50 dark:bg-yellow-900/30 rounded-md">
               <Label htmlFor="maintenanceMessage">Thông Báo Bảo Trì</Label>
@@ -635,3 +1017,4 @@ export const AdminSettingsPage = () => {
 
 
 export default AdminDashboardPage;
+

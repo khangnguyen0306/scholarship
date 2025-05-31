@@ -117,4 +117,44 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   app.status = status;
   await app.save();
   res.json({ status: 200, message: "Cập nhật trạng thái hồ sơ thành công", data: app });
+});
+
+// Lấy tất cả hồ sơ đã nộp (admin)
+export const getAllApplications = asyncHandler(async (req, res) => {
+  // TODO: kiểm tra quyền admin nếu cần
+  const apps = await Application.find()
+    .populate({
+      path: 'scholarship',
+      select: 'name school',
+      populate: { path: 'school', select: 'logo' }
+    })
+    .populate('student', 'firstName lastName email profileImage')
+    .sort({ createdAt: -1 });
+  // Định dạng lại dữ liệu trả về chỉ lấy các trường cần thiết
+  const data = apps.map(app => ({
+    _id: app._id,
+    scholarshipName: app.scholarship?.name,
+    status: app.status,
+    studentName: app.student ? `${app.student.firstName} ${app.student.lastName}` : '',
+    email: app.student?.email,
+    schoolLogo: app.scholarship?.school?.logo,
+    createdAt: app.createdAt
+  }));
+  res.json({ status: 200, message: "Lấy tất cả hồ sơ đã nộp thành công", data });
+});
+
+// Lấy chi tiết đơn nộp (admin)
+export const getApplicationDetail = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ status: 400, message: "ID không hợp lệ" });
+  }
+  const app = await Application.findById(id)
+    .populate({
+      path: 'scholarship',
+      populate: { path: 'school', select: 'name logo' }
+    })
+    .populate('student', 'firstName lastName email profileImage address isPremium grades10 grades11 grades12 certificates');
+  if (!app) return res.status(404).json({ status: 404, message: "Không tìm thấy đơn nộp" });
+  res.json({ status: 200, message: "Lấy chi tiết đơn nộp thành công", data: app });
 }); 

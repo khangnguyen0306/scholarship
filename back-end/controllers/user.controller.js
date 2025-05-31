@@ -88,6 +88,11 @@ const authUser = asyncHandler(async (req, res) => {
   // Tìm người dùng theo email
   const user = await Auth.findOne({ email });
   if (user && (await user.matchPassword(password))) {
+    // Thêm kiểm tra block
+    if (user.isBlocked) {
+      res.status(403);
+      throw new Error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin.");
+    }
     // Thêm kiểm tra xác thực email
     if (!user.isEmailVerified) {
       res.status(401);
@@ -855,7 +860,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
 // Lấy danh sách tất cả user (chỉ admin)
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await Auth.find({}, '_id email firstName lastName role isPremium isEmailVerified createdAt');
+  const users = await Auth.find({}, '_id email firstName lastName role isPremium isEmailVerified createdAt isBlocked');
   res.json({ status: 200, message: "Lấy danh sách user thành công", data: users });
 });
 
@@ -869,4 +874,310 @@ const getUserProfileById = asyncHandler(async (req, res) => {
   res.json({ status: 200, message: "Lấy thông tin user thành công", data: user });
 });
 
-export { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, verifyEmail, updateProfile, getAllUsers, getUserProfileById };
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   put:
+ *     summary: Admin cập nhật thông tin user bất kỳ
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID của user cần cập nhật
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [guest, student, mentor, admin]
+ *               isPremium:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Cập nhật user thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     firstName:
+ *                       type: string
+ *                     lastName:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     isPremium:
+ *                       type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: "Cập nhật user thành công"
+ *       404:
+ *         description: Không tìm thấy người dùng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Không tìm thấy người dùng"
+ */
+// @desc    Admin cập nhật thông tin user bất kỳ
+// @route   PUT /api/users/:id
+// @access  Private/Admin
+const adminUpdateUser = asyncHandler(async (req, res) => {
+  const user = await Auth.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error("Không tìm thấy người dùng");
+  }
+
+  // Chỉ cập nhật các trường cho phép
+  user.firstName = req.body.firstName ?? user.firstName;
+  user.lastName = req.body.lastName ?? user.lastName;
+  user.email = req.body.email ?? user.email;
+  user.role = req.body.role ?? user.role;
+  user.isPremium = req.body.isPremium ?? user.isPremium;
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      _id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      isPremium: user.isPremium,
+    },
+    message: "Cập nhật user thành công"
+  });
+});
+
+/**
+ * @swagger
+ * /api/users/{id}/block:
+ *   patch:
+ *     summary: Admin khóa hoặc mở khóa user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID của user cần block/unblock
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isBlocked:
+ *                 type: boolean
+ *                 description: true để khóa, false để mở khóa
+ *     responses:
+ *       200:
+ *         description: Trạng thái block user đã được cập nhật
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     isBlocked:
+ *                       type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: "User đã bị khóa"
+ *       404:
+ *         description: Không tìm thấy người dùng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Không tìm thấy người dùng"
+ */
+// @desc    Admin khóa/mở khóa user
+// @route   PATCH /api/users/:id/block
+// @access  Private/Admin
+const adminBlockUser = asyncHandler(async (req, res) => {
+  const user = await Auth.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error("Không tìm thấy người dùng");
+  }
+
+  // Đảo trạng thái block
+  user.isBlocked = !user.isBlocked;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      _id: user._id,
+      isBlocked: user.isBlocked,
+    },
+    message: user.isBlocked ? "User đã bị khóa" : "User đã được mở khóa"
+  });
+});
+
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Admin tạo user mới
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - firstName
+ *               - lastName
+ *               - role
+ *             properties:
+ *               email:
+ *                 type: string
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [guest, student, mentor, admin]
+ *               isPremium:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Tạo user thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     firstName:
+ *                       type: string
+ *                     lastName:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     isPremium:
+ *                       type: boolean
+ *                 message:
+ *                   type: string
+ *                   example: "Tạo user thành công, mật khẩu đã gửi về email"
+ *       400:
+ *         description: Tài khoản đã tồn tại
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Tài khoản đã tồn tại"
+ */
+// @desc    Admin tạo user mới
+// @route   POST /api/users
+// @access  Private/Admin
+const adminCreateUser = asyncHandler(async (req, res) => {
+  const { email, firstName, lastName, role, isPremium } = req.body;
+  const userExists = await Auth.findOne({ email });
+  if (userExists) {
+    res.status(400);
+    throw new Error("Tài khoản đã tồn tại");
+  }
+  // Tạo mật khẩu ngẫu nhiên
+  const password = Math.random().toString(36).slice(-8);
+  // Tạo user, tự động xác thực email
+  const user = await Auth.create({
+    email,
+    passwordHash: password,
+    firstName,
+    lastName,
+    role: role || 'student',
+    isPremium: !!isPremium,
+    isEmailVerified: true,
+    isBlocked: false
+  });
+  // Gửi mật khẩu về email
+  const mailOptions = {
+    to: email,
+    subject: "Tài khoản của bạn đã được tạo",
+    text: `Xin chào ${firstName} ${lastName},\n\nTài khoản của bạn đã được admin tạo trên hệ thống.\n\nEmail: ${email}\nMật khẩu: ${password}\n\nVui lòng đăng nhập và đổi mật khẩu sau khi đăng nhập.`,
+    html: `<p>Xin chào <b>${firstName} ${lastName}</b>,</p><p>Tài khoản của bạn đã được admin tạo trên hệ thống.</p><ul><li>Email: <b>${email}</b></li><li>Mật khẩu: <b>${password}</b></li></ul><p>Vui lòng đăng nhập và đổi mật khẩu sau khi đăng nhập.</p>`
+  };
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Lỗi gửi email tạo tài khoản:", error);
+    }
+  });
+  res.status(201).json({
+    success: true,
+    data: {
+      _id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      isPremium: user.isPremium
+    },
+    message: "Tạo user thành công, mật khẩu đã gửi về email"
+  });
+});
+
+export { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, verifyEmail, updateProfile, getAllUsers, getUserProfileById, adminUpdateUser, adminBlockUser, adminCreateUser };

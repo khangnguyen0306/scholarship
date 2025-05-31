@@ -6,7 +6,7 @@ import { baseApi } from "./BaseAPI";
 export const SchoolAPI = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getSchools: builder.query({
-      query: ({ search, nationality }) => ({
+      query: ({ search, nationality } = {}) => ({
         url: "/schools",
         params: { search, nationality }
       }),
@@ -20,17 +20,29 @@ export const SchoolAPI = baseApi.injectEndpoints({
         url: `/schools/${id}`,
       }),
     }),
-    // createDateNofitication: builder.mutation({
-    //   query: (data) => ({
-    //     url: `configs/update/${data.configId}`,
-    //     method: "POST",
-    //     body: {
-    //       key: data.key,
-    //       value: data.value
-    //     }
-    //   }),
-    //   invalidatesTags: [{ type: "Config", id: "LIST" }],
-    // }),
+    createSchool: builder.mutation({
+      query: (data) => ({
+        url: `schools`,
+        method: "POST",
+        body: data
+      }),
+      invalidatesTags: [{ type: "School", id: "LIST" }],
+    }),
+    updateSchool: builder.mutation({
+      query: (data) => ({
+        url: `schools/${data.id}`,
+        method: "PUT",
+        body: data
+      }),
+      invalidatesTags: [{ type: "School", id: "LIST" }],
+    }),
+    deleteSchool: builder.mutation({
+      query: (id) => ({
+        url: `schools/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "School", id: "LIST" }],
+    }),
   }),
 //   overrideExisting: false,
 });
@@ -40,4 +52,7 @@ export const {
   useLazyGetSchoolsQuery,
   useGetSchoolByIdQuery,
   useLazyGetSchoolByIdQuery,
+  useCreateSchoolMutation,
+  useUpdateSchoolMutation,
+  useDeleteSchoolMutation,
 } = SchoolAPI;

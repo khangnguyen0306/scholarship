@@ -44,9 +44,17 @@ const ManageUsersPage = lazy(async () => {
   const module = await import('@/pages/AdminDashboardPage');
   return { default: module.ManageUsersPage || (() => <div>Manage Users Placeholder</div>) };
 });
+const ManageApplicationsPage = lazy(async () => {
+  const module = await import('@/pages/AdminDashboardPage');
+  return { default: module.ManageApplicationsPage || (() => <div>Manage Applications Placeholder</div>) };
+});
 const AdminSettingsPage = lazy(async () => {
   const module = await import('@/pages/AdminDashboardPage');
   return { default: module.AdminSettingsPage || (() => <div>Admin Settings Placeholder</div>) };
+});
+const ApplicationDetailPage = lazy(async () => {
+  const module = await import('@/pages/AdminDashboardPage');
+  return { default: module.ApplicationDetailPage || (() => <div>Application Detail Placeholder</div>) };
 });
 
 
@@ -78,8 +86,6 @@ function App() {
               <Route path="vip-subscription" element={<VipSubscriptionPage />} />
               <Route path="payment-success" element={<PaymentSuccess />} />
 
-              
-
               <Route path="blog" element={<BlogPage />} />
               <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route
@@ -99,6 +105,8 @@ function App() {
                 <Route path="manage-schools" element={<ManageSchoolsPage />} />
                 <Route path="manage-scholarships" element={<ManageScholarshipsPage />} />
                 <Route path="manage-users" element={<ManageUsersPage />} />
+                <Route path="manage-applications" element={<ManageApplicationsPage />} />
+                <Route path="application/:id" element={<ApplicationDetailPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
 

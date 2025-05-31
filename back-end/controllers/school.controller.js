@@ -31,7 +31,15 @@ const getSchools = asyncHandler(async (req, res) => {
     filter.nationality = { $regex: `^${nationality}$`, $options: 'i' };
   }
   const schools = await School.find(filter);
-  res.json({ status: 200, message: "Lấy danh sách trường học thành công", data: schools });
+  // Lấy số lượng học bổng cho từng trường
+  const Scholarship = (await import('../models/Scholarship.model.js')).default;
+  const schoolsWithScholarshipCount = await Promise.all(
+    schools.map(async (school) => {
+      const count = await Scholarship.countDocuments({ school: school._id });
+      return { ...school.toObject(), scholarshipCount: count };
+    })
+  );
+  res.json({ status: 200, message: "Lấy danh sách trường học thành công", data: schoolsWithScholarshipCount });
 });
 
 // @desc    Lấy chi tiết trường học

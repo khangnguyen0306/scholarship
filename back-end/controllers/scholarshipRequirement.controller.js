@@ -29,8 +29,26 @@ export const getScholarshipRequirements = asyncHandler(async (req, res) => {
   const { scholarship } = req.query;
   let filter = {};
   if (scholarship) filter.scholarship = scholarship;
-  const requirements = await ScholarshipRequirement.find(filter);
-  res.json({ status: 200, message: "Lấy danh sách yêu cầu học bổng thành công", data: requirements });
+  const requirements = await ScholarshipRequirement.find(filter)
+    .populate('requiredCertificates', 'name')
+    .populate('minCertificateScores.certificateType', 'name');
+  const data = requirements.map(r => ({
+    _id: r._id,
+    name: r.name,
+    minScore: r.minScore,
+    minGPA: r.minGPA,
+    requiredCertificates: r.requiredCertificates?.map(c => ({
+      _id: c._id,
+      name: c.name
+    })),
+    minCertificateScores: r.minCertificateScores?.map(mcs => ({
+      certificateType: mcs.certificateType?._id,
+      certificateName: mcs.certificateType?.name,
+      minScore: mcs.minScore
+    })),
+    otherConditions: r.otherConditions
+  }));
+  res.json({ status: 200, message: "Lấy danh sách yêu cầu học bổng thành công", data });
 });
 
 /**

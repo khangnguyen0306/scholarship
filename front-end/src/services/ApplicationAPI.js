@@ -15,11 +15,11 @@ export const ApplicationAPI = baseApi.injectEndpoints({
     //       ? result.data.map(({ _id }) => ({ type: "Scholarship", _id }))
     //       : [{ type: "Scholarship", _id: "LIST" }],
     // }),
-    // getCertificateById: builder.query({
-    //   query: (id) => ({
-    //     url: `/certificate-types/${id}`,
-    //   }),
-    // }),
+    getApplicationDetail: builder.query({
+      query: (id) => ({
+        url: `/applications/${id}`,
+      }),
+    }),
     createApplication: builder.mutation({
       query: (data) => ({
         url: `/applications`,
@@ -28,10 +28,19 @@ export const ApplicationAPI = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "Application", id: "LIST" }],
     }),
+    getAllApplications: builder.query({
+      query: () => ({
+        url: '/applications/all',
+        method: 'GET',
+      }),
+      providesTags: [{ type: 'Application', id: 'LIST' }],
+    }),
   }),
 //   overrideExisting: false,
 });
 
 export const {
   useCreateApplicationMutation,
+  useGetAllApplicationsQuery,
+  useGetApplicationDetailQuery,
 } = ApplicationAPI;

@@ -5,16 +5,15 @@ import { baseApi } from "./BaseAPI";
 
 export const UserAPI = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // getCertificates: builder.query({
-    //   query: ({ search, nationality, schoolId }) => ({
-    //     url: "/certificates",
-    //     params: { search, nationality, schoolId }
-    //   }),
-    //   providesTags: (result) =>
-    //     result
-    //       ? result.data.map(({ _id }) => ({ type: "Scholarship", _id }))
-    //       : [{ type: "Scholarship", _id: "LIST" }],
-    // }),
+    getAllUsers: builder.query({
+      query: () => ({
+        url: "/users/all",
+      }),
+      providesTags: (result) =>
+        result
+          ? result.data.map(({ _id }) => ({ type: "User", _id }))
+          : [{ type: "User", _id: "LIST" }],
+    }),
     getUserById: builder.query({
       query: (id) => ({
         url: `/users/${id}`,
@@ -28,19 +27,39 @@ export const UserAPI = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, arg) => [{ type: "User", id: arg.id }],
     }),
-    // createApplication: builder.mutation({
-    //   query: (data) => ({
-    //     url: `/applications`,
-    //     method: "POST",
-    //     body: data
-    //   }),
-    //   invalidatesTags: [{ type: "Application", id: "LIST" }],
-    // }),
+
+    editUser: builder.mutation({
+      query: (data) => ({
+        url: `/users/${data.id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (result, error, arg) => [{ type: "User", id: arg.id }],
+    }),
+    createUser: builder.mutation({
+      query: (data) => ({
+        url: `/users`,
+        method: "POST",
+        body: data
+      }),
+      invalidatesTags: [{ type: "User", id: "LIST" }],
+    }),
+    blockUser: builder.mutation({
+      query: (id) => ({
+        url: `/users/${id}/block`,
+        method: "PATCH",
+      }),
+      invalidatesTags: [{ type: "User", id: "LIST" }],
+    }),
   }),
-//   overrideExisting: false,
+  //   overrideExisting: false,
 });
 
 export const {
   useGetUserByIdQuery,
   useUpdateProfileMutation,
+  useGetAllUsersQuery,
+  useEditUserMutation,
+  useCreateUserMutation,
+  useBlockUserMutation,
 } = UserAPI;
