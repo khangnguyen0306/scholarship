@@ -137,9 +137,42 @@ export const AdminOverview = () =>{
   const {data: scholarRequirement} = useGetScholarshipRequirementsQuery()
   const scholarRequirementConut = scholarRequirement?.data?.length
 
+  // Tính doanh thu theo tháng và năm
+  const calculateRevenue = () => {
+    if (!users?.data) return { monthly: 0, yearly: 0 };
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    
+    // Lọc người dùng VIP và tính doanh thu
+    const monthlyRevenue = users.data
+      .filter(user => user.isPremium)
+      .filter(user => {
+        const updateDate = new Date(user.updatedAt);
+        return updateDate.getMonth() === currentMonth && 
+               updateDate.getFullYear() === currentYear;
+      })
+      .length * 199000;
+
+    const yearlyRevenue = users.data
+      .filter(user => user.isPremium)
+      .filter(user => {
+        const updateDate = new Date(user.updatedAt);
+        return updateDate.getFullYear() === currentYear;
+      })
+      .length * 199000;
+
+    return {
+      monthly: monthlyRevenue.toLocaleString('vi-VN'),
+      yearly: yearlyRevenue.toLocaleString('vi-VN')
+    };
+  };
+
+  const revenue = calculateRevenue();
   
   return (
-  
     <div>
       <motion.h1
         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
@@ -151,7 +184,6 @@ export const AdminOverview = () =>{
         <StatCard title="Người Dùng Đã Đăng Ký" value={userCount} icon={<Users className="h-8 w-8 text-purple-500" />}  />
         <StatCard title="Trường Học Trong Hệ Thống" value={schoolCount} icon={<University className="h-8 w-8 text-blue-500" />}  />
         <StatCard title="Học Bổng Khả Dụng" value={scholarshipCount} icon={<GraduationCap className="h-8 w-8 text-green-500" />} />
-        {/* <StatCard title="Lượt Truy Cập Hôm Nay" value="5,678" icon={<BarChart2 className="h-8 w-8 text-yellow-500" />} trend="Ổn định" /> */}
         <StatCard title="Đơn Xin Học Bổng (Tuần)" value={scholarRequirementConut} icon={<Briefcase className="h-8 w-8 text-indigo-500" />} />
         <StatCard title="Tài Khoản VIP" value={premiumUserCount} icon={<Award className="h-8 w-8 text-pink-500" />}  />
       </div>
@@ -166,6 +198,36 @@ export const AdminOverview = () =>{
             <li className="text-sm text-muted-foreground">Trường <span className="font-semibold text-primary">Đại học FPT</span> vừa thêm 2 học bổng mới.</li>
             <li className="text-sm text-muted-foreground">Có 15 đơn xin học bổng mới cho <span className="font-semibold text-primary">Học bổng Tài Năng Trẻ</span>.</li>
           </ul>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8 p-6 glass-card">
+        <CardHeader>
+          <CardTitle>Thống kê doanh thu</CardTitle>
+          <CardDescription>Doanh thu từ việc nâng cấp tài khoản VIP</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 bg-background rounded-lg border">
+              <h3 className="text-lg font-semibold mb-2">Doanh thu tháng {new Date().getMonth() + 1}</h3>
+              <p className="text-2xl font-bold text-primary">{revenue.monthly} VNĐ</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Số tài khoản VIP mới: {users?.data?.filter(user => {
+                  const updateDate = new Date(user.updatedAt);
+                  return user.isPremium && 
+                         updateDate.getMonth() === new Date().getMonth() && 
+                         updateDate.getFullYear() === new Date().getFullYear();
+                }).length || 0}
+              </p>
+            </div>
+            <div className="p-4 bg-background rounded-lg border">
+              <h3 className="text-lg font-semibold mb-2">Doanh thu năm {new Date().getFullYear()}</h3>
+              <p className="text-2xl font-bold text-primary">{revenue.yearly} VNĐ</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Tổng số tài khoản VIP: {premiumUserCount}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
