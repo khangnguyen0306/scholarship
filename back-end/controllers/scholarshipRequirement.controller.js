@@ -4,32 +4,23 @@ import ScholarshipRequirement from "../models/ScholarshipRequirement.model.js";
 /**
  * Tạo yêu cầu học bổng
  * Validate:
- *  - scholarship: Bắt buộc (ObjectId học bổng)
  *  - minGPA: Không bắt buộc, nếu có nên là số hợp lệ
  *  - requiredCertificates: Không bắt buộc, mảng ObjectId chứng chỉ
  *  - minCertificateScores: Không bắt buộc, mảng object { certificateType, minScore }
  *  - otherConditions: Không bắt buộc, string
- * Nếu thiếu scholarship trả về 400
  */
 export const createScholarshipRequirement = asyncHandler(async (req, res) => {
-  const { scholarship, minGPA, requiredCertificates, minCertificateScores, otherConditions } = req.body;
-  if (!scholarship) {
-    return res.status(400).json({ status: 400, message: "Thiếu trường scholarship" });
-  }
-  const requirement = await ScholarshipRequirement.create({ scholarship, minGPA, requiredCertificates, minCertificateScores, otherConditions });
+  const { minGPA, requiredCertificates, minCertificateScores, otherConditions } = req.body;
+  const requirement = await ScholarshipRequirement.create({ minGPA, requiredCertificates, minCertificateScores, otherConditions });
   res.status(201).json({ status: 201, message: "Tạo yêu cầu học bổng thành công", data: requirement });
 });
 
 /**
  * Lấy tất cả yêu cầu học bổng
- * Có thể filter theo scholarship (id học bổng)
  * Trả về 200, data là mảng yêu cầu
  */
 export const getScholarshipRequirements = asyncHandler(async (req, res) => {
-  const { scholarship } = req.query;
-  let filter = {};
-  if (scholarship) filter.scholarship = scholarship;
-  const requirements = await ScholarshipRequirement.find(filter)
+  const requirements = await ScholarshipRequirement.find()
     .populate('requiredCertificates', 'name')
     .populate('minCertificateScores.certificateType', 'name');
   const data = requirements.map(r => ({

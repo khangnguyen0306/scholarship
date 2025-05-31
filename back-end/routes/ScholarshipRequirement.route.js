@@ -31,12 +31,7 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - scholarship
  *             properties:
- *               scholarship:
- *                 type: string
- *                 description: ID học bổng liên kết
  *               minGPA:
  *                 type: number
  *                 description: Điểm trung bình tối thiểu
@@ -62,14 +57,8 @@ const router = express.Router();
  *       201:
  *         description: Tạo yêu cầu học bổng thành công
  *   get:
- *     summary: Lấy danh sách yêu cầu học bổng (filter theo scholarship)
+ *     summary: Lấy danh sách yêu cầu học bổng
  *     tags: [ScholarshipRequirements]
- *     parameters:
- *       - in: query
- *         name: scholarship
- *         schema:
- *           type: string
- *         description: Lọc theo id học bổng
  *     responses:
  *       200:
  *         description: Lấy danh sách yêu cầu học bổng thành công

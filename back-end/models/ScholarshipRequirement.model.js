@@ -6,7 +6,6 @@ const minCertificateScoreSchema = new mongoose.Schema({
 }, { _id: false });
 
 const scholarshipRequirementSchema = new mongoose.Schema({
-  scholarship: { type: mongoose.Schema.Types.ObjectId, ref: 'Scholarship', required: true },
   minGPA: { type: Number },
   requiredCertificates: [{ type: mongoose.Schema.Types.ObjectId, ref: 'CertificateType' }],
   minCertificateScores: [minCertificateScoreSchema],
