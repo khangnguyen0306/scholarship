@@ -6,7 +6,7 @@ services:
       context: ./front-end
       dockerfile: Dockerfile
     ports:
-      - "80:80"           # expose nginx port 80 ra ngoài server port 80
+      - "80:80"      
     restart: unless-stopped
 
   back-end:
@@ -14,5 +14,5 @@ services:
       context: ./back-end
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"       # expose backend port 3000
+      - "3000:3000"       
     restart: unless-stopped

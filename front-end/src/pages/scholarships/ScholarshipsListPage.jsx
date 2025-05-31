@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useGetScholarshipsQuery } from '../../services/ScholarshipAPI';
 import { useGetScholarshipRequirementsQuery } from '../../services/ScholarshipRequirementAPI';
 import { useGetUserByIdQuery } from '../../services/UserAPI';
+import { useSelector } from 'react-redux';
 
 const subjects = ["Toán", "Văn", "Vật lý", "Hóa học", "Sinh", "Lịch", "Địa", "GDCD", "Tin", "Công nghệ", "Anh", "Thể dục", "Quốc phòng"];
 
@@ -28,10 +29,9 @@ const ScholarshipsListPage = () => {
   const { toast } = useToast();
   const { data: scholarships, isLoading, error, refetch } = useGetScholarshipsQuery(searchParams, { skip: false });
   const scholarshipsData = scholarships?.data || [];
-  const userString = sessionStorage.getItem('user');
-  const user = JSON.parse(userString); 
-  const userId = user._id;
-  const { data: userProfile } = useGetUserByIdQuery(userId);
+  const user = useSelector(state => state.auth.user);
+  const userId = user?._id;
+  const { data: userProfile,isLoading: isLoadingUser } = useGetUserByIdQuery(userId);
   const userData = userProfile?.data;
   const navigate = useNavigate();
 
@@ -125,7 +125,7 @@ const ScholarshipsListPage = () => {
   };
 
   return (
-    isLoading ? <div>Loading...</div> :
+    isLoading || isLoadingUser ? <div>Loading...</div> :
     <div className="container mx-auto py-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
