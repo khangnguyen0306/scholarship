@@ -13,7 +13,7 @@ const Footer = () => {
           <div>
             <Link to="/" className="flex items-center space-x-2 mb-4">
               <Award className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-gradient-primary">ScholarSeeker</span>
+              <span className="text-xl font-bold text-gradient-primary">Grant Hub</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Tìm kiếm cơ hội học bổng mơ ước của bạn. Kết nối sinh viên với các trường đại học hàng đầu.
@@ -52,10 +52,10 @@ const Footer = () => {
 
         <div className="mt-12 border-t border-border/50 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {currentYear} ScholarSeeker. Bảo lưu mọi quyền.
+            &copy; {currentYear} Grant Hub. Bảo lưu mọi quyền.
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Được phát triển với <span role="img" aria-label="love">❤️</span> bởi Hostinger Horizons.
+            Được phát triển với <span role="img" aria-label="love">❤️</span>
           </p>
         </div>
       </div>
