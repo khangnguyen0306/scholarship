@@ -62,6 +62,7 @@ import { useCreateSchoolMutation, useDeleteSchoolMutation, useGetSchoolsQuery, u
 import { useCreateScholarshipMutation, useDeleteScholarshipMutation, useGetScholarshipsQuery, useUpdateScholarshipMutation } from '../services/ScholarshipAPI';
 import { useGetScholarshipRequirementsQuery, useCreateScholarshipRequirementsMutation, useUpdateScholarshipRequirementsMutation, useDeleteScholarshipRequirementsMutation } from '../services/ScholarRequirement';
 import { useGetAllApplicationsQuery, useGetApplicationDetailQuery } from '../services/ApplicationAPI';
+import { useGetCertificateTypesQuery } from '../services/CertificateAPI';
 
 const AdminDashboardPage = () => {
   const location = useLocation();
@@ -1033,13 +1034,254 @@ export const AdminSettingsPage = () => {
 };
 
 export const ManageRequirementsPage = () => {
-  const { data: requirements, isLoading, error } = useGetScholarshipRequirementsQuery();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingRequirement, setEditingRequirement] = useState(null);
+  const { toast } = useToast();
+  const { data: requirements, isLoading, error, refetch } = useGetScholarshipRequirementsQuery();
+  const { data: scholarships } = useGetScholarshipsQuery();
+  const { data: certificateTypes } = useGetCertificateTypesQuery();
+  const [createRequirement] = useCreateScholarshipRequirementsMutation();
+  const [updateRequirement] = useUpdateScholarshipRequirementsMutation();
+  const [deleteRequirement] = useDeleteScholarshipRequirementsMutation();
+
+  const [formData, setFormData] = useState({
+    scholarship: '',
+    minGPA: '',
+    requiredCertificates: [''],
+    minCertificateScores: [{ certificateType: '', minScore: '' }],
+    otherConditions: ''
+  });
+
+  useEffect(() => {
+    if (editingRequirement) {
+      setFormData({
+        scholarship: editingRequirement.scholarship,
+        minGPA: editingRequirement.minGPA || '',
+        requiredCertificates: editingRequirement.requiredCertificates?.length ? [editingRequirement.requiredCertificates[0]] : [''],
+        minCertificateScores: editingRequirement.minCertificateScores?.length ? 
+          [{
+            certificateType: editingRequirement.minCertificateScores[0].certificateType,
+            minScore: editingRequirement.minCertificateScores[0].minScore
+          }] : 
+          [{ certificateType: '', minScore: '' }],
+        otherConditions: editingRequirement.otherConditions || ''
+      });
+    }
+  }, [editingRequirement]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (!formData.scholarship) {
+        toast({
+          title: 'Vui lòng chọn học bổng!',
+          className: "bg-red-500 text-white"
+        });
+        return;
+      }
+
+      const dataToSend = {
+        ...formData,
+        minGPA: formData.minGPA ? parseFloat(formData.minGPA) : undefined,
+        requiredCertificates: formData.requiredCertificates[0] ? [formData.requiredCertificates[0]] : [],
+        minCertificateScores: formData.minCertificateScores[0].certificateType && formData.minCertificateScores[0].minScore ? 
+          [{
+            certificateType: formData.minCertificateScores[0].certificateType,
+            minScore: parseFloat(formData.minCertificateScores[0].minScore)
+          }] : []
+      };
+
+      if (editingRequirement) {
+        const res = await updateRequirement({ ...dataToSend, id: editingRequirement._id });
+        if (res.data.status === 200) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+      } else {
+        const res = await createRequirement(dataToSend);
+        if (res.data.status === 201) {
+          toast({
+            title: res.data.message,
+            className: "bg-green-500 text-white"
+          });
+        }
+      }
+      setIsFormOpen(false);
+      setEditingRequirement(null);
+      setFormData({
+        scholarship: '',
+        minGPA: '',
+        requiredCertificates: [''],
+        minCertificateScores: [{ certificateType: '', minScore: '' }],
+        otherConditions: ''
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: error.data?.message || 'Có lỗi xảy ra!',
+        className: "bg-red-500 text-white"
+      });
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const res = await deleteRequirement(id);
+      if (res.data.status === 200) {
+        toast({
+          title: res.data.message,
+          className: "bg-green-500 text-white"
+        });
+        refetch();
+      }
+    } catch (error) {
+      toast({
+        title: error.data?.message || 'Có lỗi xảy ra!',
+        className: "bg-red-500 text-white"
+      });
+    }
+  };
+
+  const updateCertificateScore = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      minCertificateScores: [{
+        ...prev.minCertificateScores[0],
+        [field]: value
+      }]
+    }));
+  };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gradient-primary">Quản Lý Yêu Cầu Học Bổng</h1>
+        <Button 
+          onClick={() => {
+            setEditingRequirement(null);
+            setFormData({
+              scholarship: '',
+              minGPA: '',
+              requiredCertificates: [''],
+              minCertificateScores: [{ certificateType: '', minScore: '' }],
+              otherConditions: ''
+            });
+            setIsFormOpen(true);
+          }} 
+          className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all duration-300"
+          size="lg"
+        >
+          <PlusCircle className="mr-2 h-5 w-5" /> Thêm Yêu Cầu Mới
+        </Button>
       </div>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{editingRequirement ? 'Sửa Yêu Cầu' : 'Thêm Yêu Cầu Mới'}</DialogTitle>
+            <DialogDescription>
+              {editingRequirement ? 'Cập nhật thông tin yêu cầu' : 'Điền thông tin yêu cầu cho học bổng'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="scholarship">Học bổng *</Label>
+              <select
+                id="scholarship"
+                value={formData.scholarship}
+                onChange={(e) => setFormData(prev => ({ ...prev, scholarship: e.target.value }))}
+                className="w-full rounded-md border border-input bg-background px-3 py-2"
+                required
+              >
+                <option value="">Chọn học bổng</option>
+                {scholarships?.data?.map(sch => (
+                  <option key={sch._id} value={sch._id}>{sch.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minGPA">GPA tối thiểu</Label>
+              <Input
+                id="minGPA"
+                type="number"
+                step="0.1"
+                min="0"
+                max="4.0"
+                value={formData.minGPA}
+                onChange={(e) => setFormData(prev => ({ ...prev, minGPA: e.target.value }))}
+                placeholder="VD: 3.0"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Chứng chỉ bắt buộc</Label>
+              <select
+                value={formData.requiredCertificates[0]}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  requiredCertificates: [e.target.value]
+                }))}
+                className="w-full rounded-md border border-input bg-background px-3 py-2"
+              >
+                <option value="">Chọn chứng chỉ bắt buộc</option>
+                {certificateTypes?.data?.map(cert => (
+                  <option key={cert._id} value={cert._id}>{cert.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Điểm chứng chỉ tối thiểu</Label>
+              <div className="flex gap-2 items-center">
+                <select
+                  value={formData.minCertificateScores[0].certificateType}
+                  onChange={(e) => updateCertificateScore('certificateType', e.target.value)}
+                  className="flex-1 rounded-md border border-input bg-background px-3 py-2"
+                >
+                  <option value="">Chọn chứng chỉ</option>
+                  {certificateTypes?.data?.map(cert => (
+                    <option key={cert._id} value={cert._id}>{cert.name}</option>
+                  ))}
+                </select>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={formData.minCertificateScores[0].minScore}
+                  onChange={(e) => updateCertificateScore('minScore', e.target.value)}
+                  placeholder="Điểm"
+                  className="w-24"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="otherConditions">Điều kiện khác</Label>
+              <Textarea
+                id="otherConditions"
+                value={formData.otherConditions}
+                onChange={(e) => setFormData(prev => ({ ...prev, otherConditions: e.target.value }))}
+                placeholder="Nhập các điều kiện khác nếu có"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => {
+                setIsFormOpen(false);
+                setEditingRequirement(null);
+              }}>
+                Hủy
+              </Button>
+              <Button type="submit">{editingRequirement ? 'Lưu thay đổi' : 'Thêm yêu cầu'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Card className="glass-card">
         <Table>
           <TableHeader>
@@ -1048,11 +1290,12 @@ export const ManageRequirementsPage = () => {
               <TableHead>Chứng chỉ tối thiểu</TableHead>
               <TableHead>Chứng chỉ bắt buộc</TableHead>
               <TableHead>Điều kiện khác</TableHead>
+              <TableHead className="text-right">Hành động</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableCell colSpan={4} className="text-center">Loading...</TableCell>}
-            {error && <TableCell colSpan={4} className="text-center">Error: {error.message}</TableCell>}
+            {isLoading && <TableCell colSpan={5} className="text-center">Loading...</TableCell>}
+            {error && <TableCell colSpan={5} className="text-center">Error: {error.message}</TableCell>}
             {requirements?.data?.map((requirement) => (
               <TableRow key={requirement._id}>
                 <TableCell className="font-medium">{requirement.minGPA || 'Không yêu cầu'}</TableCell>
@@ -1071,6 +1314,42 @@ export const ManageRequirementsPage = () => {
                   ))}
                 </TableCell>
                 <TableCell>{requirement.otherConditions || 'Không có'}</TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => {
+                      setEditingRequirement(requirement);
+                      setIsFormOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Bạn có chắc chắn muốn xóa?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Hành động này không thể hoàn tác. Yêu cầu này sẽ bị xóa vĩnh viễn.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Hủy</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDelete(requirement._id)} 
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          Xóa
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
