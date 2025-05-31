@@ -15,34 +15,34 @@ export const ScholarshipRequirementAPI = baseApi.injectEndpoints({
           ? result.data.map(({ _id }) => ({ type: "ScholarshipRequirement", _id }))
           : [{ type: "ScholarshipRequirement", _id: "LIST" }],
     }),
-    // getScholarshipById: builder.query({
-    //   query: (id) => ({
-    //     url: `/scholarships/${id}`,
-    //   }),
-    // }),
-    // createScholarship: builder.mutation({
-    //   query: (data) => ({
-    //     url: `scholarships`,
-    //     method: "POST",
-    //     body: data
-    //   }),
-    //   invalidatesTags: [{ type: "Scholarship", id: "LIST" }],
-    // }),
-    // updateScholarship: builder.mutation({
-    //   query: (data) => ({
-    //     url: `scholarships/${data.id}`,
-    //     method: "PUT",
-    //     body: data
-    //   }),
-    //   invalidatesTags: [{ type: "Scholarship", id: "LIST" }],
-    // }),
-    // deleteScholarship: builder.mutation({
-    //   query: (id) => ({
-    //     url: `scholarships/${id}`,
-    //     method: "DELETE",
-    //   }),
-    //   invalidatesTags: [{ type: "Scholarship", id: "LIST" }],
-    // }),
+    getScholarshipRequirementsById: builder.query({
+      query: (id) => ({
+        url: `/scholarship-requirements/${id}`,
+      }),
+    }),
+    createScholarshipRequirements: builder.mutation({
+      query: (data) => ({
+        url: `/scholarship-requirements`,
+        method: "POST",
+        body: data
+      }),
+      invalidatesTags: [{ type: "ScholarshipRequirement", id: "LIST" }],
+    }),
+    updateScholarshipRequirements: builder.mutation({
+      query: (data) => ({
+        url: `scholarship-requirements/${data.id}`,
+        method: "PUT",
+        body: data
+      }),
+      invalidatesTags: [{ type: "ScholarshipRequirement", id: "LIST" }],
+    }),
+    deleteScholarshipRequirements: builder.mutation({
+      query: (id) => ({
+        url: `scholarship-requirements/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "ScholarshipRequirement", id: "LIST" }],
+    }),
   }),
 //   overrideExisting: false,
 });
@@ -50,9 +50,9 @@ export const ScholarshipRequirementAPI = baseApi.injectEndpoints({
 export const {
   useGetScholarshipRequirementsQuery,
   useLazyGetScholarshipRequirementsQuery,
-  // useGetScholarshipByIdQuery,
-  // useLazyGetScholarshipByIdQuery,
-  // useCreateScholarshipMutation,
-  // useUpdateScholarshipMutation,
-  // useDeleteScholarshipMutation,
+  useGetScholarshipRequirementsByIdQuery,
+  useLazyGetScholarshipRequirementsByIdQuery,
+  useCreateScholarshipRequirementsMutation,
+  useUpdateScholarshipRequirementsMutation,
+  useDeleteScholarshipRequirementsMutation,
 } = ScholarshipRequirementAPI;

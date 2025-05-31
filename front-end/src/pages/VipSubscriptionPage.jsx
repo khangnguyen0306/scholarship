@@ -52,9 +52,9 @@ const VipSubscriptionPage = () => {
 
   const plans = [
     {
-      name: "Gói Tháng",
+      // name: "Gói Tháng",
       price: "199.000 VNĐ",
-      period: "/tháng",
+      // period: "/tháng",
       features: [
         "Nộp đơn không giới hạn",
         "Gợi ý học bổng cá nhân hóa",
@@ -65,20 +65,20 @@ const VipSubscriptionPage = () => {
       color: "from-yellow-400 to-orange-500",
       buttonText: "Đăng Ký Gói Tháng"
     },
-    {
-      name: "Gói Năm (Tiết Kiệm 20%)",
-      price: "1.990.000 VNĐ",
-      period: "/năm",
-      features: [
-        "Tất cả quyền lợi Gói Tháng",
-        "Truy cập sớm các học bổng mới",
-        "Huy hiệu VIP nổi bật",
-        "Ưu đãi đặc biệt từ đối tác",
-      ],
-      icon: <Award className="h-8 w-8 text-purple-400" />,
-      color: "from-purple-500 to-pink-500",
-      buttonText: "Đăng Ký Gói Năm"
-    }
+    // {
+    //   name: "Gói Năm (Tiết Kiệm 20%)",
+    //   price: "1.990.000 VNĐ",
+    //   period: "/năm",
+    //   features: [
+    //     "Tất cả quyền lợi Gói Tháng",
+    //     "Truy cập sớm các học bổng mới",
+    //     "Huy hiệu VIP nổi bật",
+    //     "Ưu đãi đặc biệt từ đối tác",
+    //   ],
+    //   icon: <Award className="h-8 w-8 text-purple-400" />,
+    //   color: "from-purple-500 to-pink-500",
+    //   buttonText: "Đăng Ký Gói Năm"
+    // }
   ];
 
   return (
@@ -97,7 +97,7 @@ const VipSubscriptionPage = () => {
         </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div className=" gap-8 max-w-4xl mx-auto">
         {plans.map((plan, index) => (
           <motion.div
             key={plan.name}
