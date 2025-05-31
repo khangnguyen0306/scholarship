@@ -35,7 +35,7 @@ const ScholarshipDetailPage = () => {
   const { data: requirementData, isLoading: isLoadingRequirement, error: errorRequirement } =
     useGetScholarshipRequirementsQuery(requirementId, { skip: !requirementId });
 
-  console.log(scholarship);
+
   const user = useSelector(selectCurrentUser);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -106,12 +106,21 @@ const ScholarshipDetailPage = () => {
     }
     try {
       const response = await createApplication(application);
-      console.log(response);
-      toast({
+      console.log("aaaaa",response);
+      if (response.error) {
+        toast({
+          title: "Lỗi",
+          description: `${response.error.data.message}`,
+          variant: "destructive",
+        });
+      } else{
+        toast({
         title: "Nộp đơn thành công!",
         description: `Đơn xin học bổng "${scholarshipData.name}" của bạn đã được gửi.`,
         action: <CheckCircle className="text-green-500" />,
       });
+      }
+     
       setFormData(prev => ({ ...prev, essay: '' }));
       setDocuments([{ name: '', url: '' }]);
       setIsSubmitting(false);
