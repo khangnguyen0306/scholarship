@@ -60,12 +60,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { useBlockUserMutation, useCreateUserMutation, useEditUserMutation, useGetAllUsersQuery } from '../services/UserAPI';
 import { useCreateSchoolMutation, useDeleteSchoolMutation, useGetSchoolsQuery, useUpdateSchoolMutation } from '../services/SchoolAPI';
 import { useCreateScholarshipMutation, useDeleteScholarshipMutation, useGetScholarshipsQuery, useUpdateScholarshipMutation } from '../services/ScholarshipAPI';
-import { useGetScholarshipRequirementsQuery } from '../services/ScholarRequirement';
+import { useGetScholarshipRequirementsQuery, useCreateScholarshipRequirementsMutation, useUpdateScholarshipRequirementsMutation, useDeleteScholarshipRequirementsMutation } from '../services/ScholarRequirement';
 import { useGetAllApplicationsQuery, useGetApplicationDetailQuery } from '../services/ApplicationAPI';
 
 const AdminDashboardPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+ 
 
   useEffect(() => {
     if (location.pathname === '/admin' || location.pathname === '/admin/') {
@@ -78,8 +79,10 @@ const AdminDashboardPage = () => {
     { path: '/admin/manage-users', label: 'Quản Lý Người Dùng', icon: <UserCog className="h-5 w-5" /> },
     { path: '/admin/manage-schools', label: 'Quản Lý Trường', icon: <University className="h-5 w-5" /> },
     { path: '/admin/manage-scholarships', label: 'Quản Lý Học Bổng', icon: <GraduationCap className="h-5 w-5" /> },
+    { path: '/admin/manage-requirements', label: 'Quản Lý Yêu Cầu', icon: <CheckCircle className="h-5 w-5" /> },
     { path: '/admin/manage-applications', label: 'Quản Lý Hồ Sơ', icon: <Briefcase className="h-5 w-5" /> },
     { path: '/admin/settings', label: 'Cài Đặt', icon: <Settings className="h-5 w-5" /> },
+
   ];
 
   return (
@@ -122,37 +125,51 @@ const AdminDashboardPage = () => {
   );
 };
 
-export const AdminOverview = () => (
-  <div>
-    <motion.h1
-      initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-      className="text-3xl font-bold mb-8 text-gradient-primary"
-    >
-      Tổng Quan Hệ Thống
-    </motion.h1>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <StatCard title="Người Dùng Đã Đăng Ký" value="12,500" icon={<Users className="h-8 w-8 text-purple-500" />} trend="+5% tháng này" />
-      <StatCard title="Trường Học Trong Hệ Thống" value="150" icon={<University className="h-8 w-8 text-blue-500" />} trend="+2 trường mới" />
-      <StatCard title="Học Bổng Khả Dụng" value="780" icon={<GraduationCap className="h-8 w-8 text-green-500" />} trend="+30 học bổng mới" />
-      <StatCard title="Lượt Truy Cập Hôm Nay" value="5,678" icon={<BarChart2 className="h-8 w-8 text-yellow-500" />} trend="Ổn định" />
-      <StatCard title="Đơn Xin Học Bổng (Tuần)" value="320" icon={<Briefcase className="h-8 w-8 text-indigo-500" />} trend="+15% so với tuần trước" />
-      <StatCard title="Tài Khoản VIP" value="850" icon={<Award className="h-8 w-8 text-pink-500" />} trend="+50 VIP mới" />
+export const AdminOverview = () =>{
+  const { data: users, isLoading, error } = useGetAllUsersQuery();
+  const premiumUserCount = users?.data?.filter(user => user.isPremium)?.length || 0;
+  const userCount = users?.data?.length || 0;
+  const {data: school}= useGetSchoolsQuery()
+  const schoolCount = school?.data?.length
+  const {data: scholarship } = useGetScholarshipsQuery()
+  const scholarshipCount = scholarship?.data?.length
+  const {data: scholarRequirement} = useGetScholarshipRequirementsQuery()
+  const scholarRequirementConut = scholarRequirement?.data?.length
+
+  
+  return (
+  
+    <div>
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+        className="text-3xl font-bold mb-8 text-gradient-primary"
+      >
+        Tổng Quan Hệ Thống
+      </motion.h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <StatCard title="Người Dùng Đã Đăng Ký" value={userCount} icon={<Users className="h-8 w-8 text-purple-500" />}  />
+        <StatCard title="Trường Học Trong Hệ Thống" value={schoolCount} icon={<University className="h-8 w-8 text-blue-500" />}  />
+        <StatCard title="Học Bổng Khả Dụng" value={scholarshipCount} icon={<GraduationCap className="h-8 w-8 text-green-500" />} />
+        {/* <StatCard title="Lượt Truy Cập Hôm Nay" value="5,678" icon={<BarChart2 className="h-8 w-8 text-yellow-500" />} trend="Ổn định" /> */}
+        <StatCard title="Đơn Xin Học Bổng (Tuần)" value={scholarRequirementConut} icon={<Briefcase className="h-8 w-8 text-indigo-500" />} />
+        <StatCard title="Tài Khoản VIP" value={premiumUserCount} icon={<Award className="h-8 w-8 text-pink-500" />}  />
+      </div>
+      <Card className="mt-8 p-6 glass-card">
+        <CardHeader>
+          <CardTitle>Hoạt động gần đây</CardTitle>
+          <CardDescription>Theo dõi các hoạt động mới nhất trên hệ thống.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-3">
+            <li className="text-sm text-muted-foreground">Người dùng <span className="font-semibold text-primary">NgocAnh23</span> vừa nâng cấp VIP.</li>
+            <li className="text-sm text-muted-foreground">Trường <span className="font-semibold text-primary">Đại học FPT</span> vừa thêm 2 học bổng mới.</li>
+            <li className="text-sm text-muted-foreground">Có 15 đơn xin học bổng mới cho <span className="font-semibold text-primary">Học bổng Tài Năng Trẻ</span>.</li>
+          </ul>
+        </CardContent>
+      </Card>
     </div>
-    <Card className="mt-8 p-6 glass-card">
-      <CardHeader>
-        <CardTitle>Hoạt động gần đây</CardTitle>
-        <CardDescription>Theo dõi các hoạt động mới nhất trên hệ thống.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-3">
-          <li className="text-sm text-muted-foreground">Người dùng <span className="font-semibold text-primary">NgocAnh23</span> vừa nâng cấp VIP.</li>
-          <li className="text-sm text-muted-foreground">Trường <span className="font-semibold text-primary">Đại học FPT</span> vừa thêm 2 học bổng mới.</li>
-          <li className="text-sm text-muted-foreground">Có 15 đơn xin học bổng mới cho <span className="font-semibold text-primary">Học bổng Tài Năng Trẻ</span>.</li>
-        </ul>
-      </CardContent>
-    </Card>
-  </div>
-);
+  );
+} 
 
 const StatCard = ({ title, value, icon, trend }) => (
   <motion.div whileHover={{ y: -5 }} className="w-full">
@@ -1015,6 +1032,53 @@ export const AdminSettingsPage = () => {
   );
 };
 
+export const ManageRequirementsPage = () => {
+  const { data: requirements, isLoading, error } = useGetScholarshipRequirementsQuery();
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gradient-primary">Quản Lý Yêu Cầu Học Bổng</h1>
+      </div>
+      <Card className="glass-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>GPA tối thiểu</TableHead>
+              <TableHead>Chứng chỉ tối thiểu</TableHead>
+              <TableHead>Chứng chỉ bắt buộc</TableHead>
+              <TableHead>Điều kiện khác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && <TableCell colSpan={4} className="text-center">Loading...</TableCell>}
+            {error && <TableCell colSpan={4} className="text-center">Error: {error.message}</TableCell>}
+            {requirements?.data?.map((requirement) => (
+              <TableRow key={requirement._id}>
+                <TableCell className="font-medium">{requirement.minGPA || 'Không yêu cầu'}</TableCell>
+                <TableCell>
+                  {requirement.minCertificateScores?.map((cert, index) => (
+                    <div key={index} className="mb-1">
+                      <span className="font-medium">{cert.certificateName}</span>: {cert.minScore}
+                    </div>
+                  ))}
+                </TableCell>
+                <TableCell>
+                  {requirement.requiredCertificates?.map((cert, index) => (
+                    <div key={index} className="mb-1">
+                      <span className="font-medium">{cert.name}</span>
+                    </div>
+                  ))}
+                </TableCell>
+                <TableCell>{requirement.otherConditions || 'Không có'}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
+  );
+};
 
 export default AdminDashboardPage;
 

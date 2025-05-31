@@ -56,6 +56,10 @@ const ApplicationDetailPage = lazy(async () => {
   const module = await import('@/pages/AdminDashboardPage');
   return { default: module.ApplicationDetailPage || (() => <div>Application Detail Placeholder</div>) };
 });
+const ManageRequirementsPage = lazy(async () => {
+  const module = await import('@/pages/AdminDashboardPage');
+  return { default: module.ManageRequirementsPage || (() => <div>Manage Requirements Placeholder</div>) };
+});
 
 
 const LoadingFallback = () => (
@@ -108,6 +112,7 @@ function App() {
                 <Route path="manage-applications" element={<ManageApplicationsPage />} />
                 <Route path="application/:id" element={<ApplicationDetailPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
+                <Route path="manage-requirements" element={<ManageRequirementsPage />} />
               </Route>
 
               {/* Fallback for non-matched routes */}
