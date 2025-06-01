@@ -869,7 +869,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
 // Lấy danh sách tất cả user (chỉ admin)
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await Auth.find({}, '_id email firstName lastName role isPremium isEmailVerified createdAt isBlocked');
+  const users = await Auth.find({}, '_id email firstName lastName role isPremium isEmailVerified createdAt isBlocked updatedAt');
   res.json({ status: 200, message: "Lấy danh sách user thành công", data: users });
 });
 
