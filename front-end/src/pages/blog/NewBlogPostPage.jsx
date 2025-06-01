@@ -72,7 +72,9 @@ const NewBlogPostPage = () => {
         description: "Bài viết đã được đăng thành công.",
         variant: "default",
       });
+     
       navigate(`/blog/${result.data._id}`);
+      window.location.reload();
     } catch (err) {
       console.error('Error creating blog:', err);
       const errorMessage = err.data?.message || 'Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.';
