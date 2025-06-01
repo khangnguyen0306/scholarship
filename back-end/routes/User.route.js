@@ -1,5 +1,5 @@
 import express from "express";
-import { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, updateProfile, verifyEmail, getAllUsers, getUserProfileById, adminUpdateUser, adminBlockUser, adminCreateUser } from "../controllers/user.controller.js";
+import { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, updateProfile, verifyEmail, getAllUsers, getUserProfileById, adminUpdateUser, adminBlockUser, adminCreateUser, registerMentor, getMentors, approveMentor, rejectMentor } from "../controllers/user.controller.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
 const UserRoute = express.Router();
@@ -12,6 +12,11 @@ UserRoute.get("/verify-email/:token", verifyEmail);
 UserRoute.post("/reset-password", resetPassword);
 UserRoute.post("/change-password", changePassword);
 UserRoute.put("/update-profile", protect, updateProfile);
+UserRoute.post("/register-mentor", registerMentor);
+UserRoute.get("/mentors", getMentors);
+UserRoute.put("/mentors/:id/approve", protect, admin, approveMentor);
+UserRoute.put("/mentors/:id/reject", protect, admin, rejectMentor);
+
 
 /**
  * @swagger

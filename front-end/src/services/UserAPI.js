@@ -51,6 +51,29 @@ export const UserAPI = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "User", id: "LIST" }],
     }),
+    
+    getMentors: builder.query({
+      query: (status) => ({
+        url: `/mentors${status ? `?status=${status}` : ''}`,
+        method: "GET",
+      }),
+      providesTags: [{ type: "MentorList", id: "LIST" }],
+    }),
+    approveMentor: builder.mutation({
+      query: (id) => ({
+        url: `/mentors/${id}/approve`,
+        method: "PUT",
+      }),
+      invalidatesTags: [{ type: "MentorList", id: "LIST" }],
+    }),
+    rejectMentor: builder.mutation({
+      query: ({ id, reason }) => ({
+        url: `/mentors/${id}/reject`,
+        method: "PUT",
+        body: { reason },
+      }),
+      invalidatesTags: [{ type: "MentorList", id: "LIST" }],
+    }),
   }),
   //   overrideExisting: false,
 });
@@ -62,4 +85,7 @@ export const {
   useEditUserMutation,
   useCreateUserMutation,
   useBlockUserMutation,
+  useGetMentorsQuery,
+  useApproveMentorMutation,
+  useRejectMentorMutation,
 } = UserAPI;

@@ -24,22 +24,10 @@ const LoginPage = () => {
   const navigateByRole = {
     'student': '/',
     'admin': '/admin',
+    'mentor': '/',
   }
 
 
-  // useEffect(() => {
-
-  //   const savedEmail = Cookies.get("rememberEmail");
-  //   const savedPassword = Cookies.get("rememberPassword");
-
-  //   if (savedEmail && savedPassword) {
-  //     form.setFieldsValue({
-  //       login_identifier: savedEmail,
-  //       password: savedPassword,
-  //     });
-  //     setRememberMe(true);
-  //   }
-  // }, [form]);
 
 
   const handleLoginSuccess = (data) => {
@@ -51,6 +39,11 @@ const LoginPage = () => {
         }, 50);
         break;
       case "student":
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 50);
+        break;
+      case "mentor":
         setTimeout(() => {
           navigate('/', { replace: true });
         }, 50);

@@ -35,6 +35,23 @@ const AccountSchema = new Schema({
     score: { type: Number },
     date: { type: Date }
   }],
+  // Thông tin riêng cho mentor
+  mentorProfile: {
+    major: { type: String },
+    experience: { type: String },
+    bio: { type: String },
+    phone: { type: String },
+    degrees: [
+      {
+        name: { type: String },
+        institution: { type: String },
+        year: { type: Number }
+      }
+    ],
+    languages: [{ type: String }],
+
+  },
+  mentorStatus: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

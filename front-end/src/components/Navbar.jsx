@@ -94,7 +94,7 @@ const Navbar = () => {
                         <span>Quản trị</span>
                     </DropdownMenuItem>
                   )}
-                  {!user.isVip && (
+                  {!user.isPremium && user.role == 'student' && (
                     <DropdownMenuItem onClick={() => navigate('/vip-subscription')} className="text-primary hover:!text-primary focus:!text-primary focus:!bg-primary/10">
                       <Award className="mr-2 h-4 w-4" />
                       <span>Nâng Cấp VIP</span>

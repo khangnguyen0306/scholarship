@@ -54,14 +54,16 @@ import {
   Briefcase,
   CheckCircle,
   XCircle,
-  ShieldCheck
+  ShieldCheck,
+  User
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { useBlockUserMutation, useCreateUserMutation, useEditUserMutation, useGetAllUsersQuery } from '../services/UserAPI';
-import { useCreateSchoolMutation, useDeleteSchoolMutation, useGetSchoolsQuery, useUpdateSchoolMutation } from '../services/SchoolAPI';
-import { useCreateScholarshipMutation, useDeleteScholarshipMutation, useGetScholarshipsQuery, useUpdateScholarshipMutation } from '../services/ScholarshipAPI';
-import { useGetScholarshipRequirementsQuery, useCreateScholarshipRequirementsMutation, useUpdateScholarshipRequirementsMutation, useDeleteScholarshipRequirementsMutation } from '../services/ScholarRequirement';
-import { useGetAllApplicationsQuery, useGetApplicationDetailQuery } from '../services/ApplicationAPI';
+import { useBlockUserMutation, useCreateUserMutation, useEditUserMutation, useGetAllUsersQuery } from '../../services/UserAPI';
+import { useCreateSchoolMutation, useDeleteSchoolMutation, useGetSchoolsQuery, useUpdateSchoolMutation } from '../../services/SchoolAPI';
+import { useCreateScholarshipMutation, useDeleteScholarshipMutation, useGetScholarshipsQuery, useUpdateScholarshipMutation } from '../../services/ScholarshipAPI';
+import { useGetScholarshipRequirementsQuery, useCreateScholarshipRequirementsMutation, useUpdateScholarshipRequirementsMutation, useDeleteScholarshipRequirementsMutation } from '../../services/ScholarRequirement';
+import { useGetAllApplicationsQuery, useGetApplicationDetailQuery } from '../../services/ApplicationAPI';
+import { useGetMentorsQuery, useApproveMentorMutation, useRejectMentorMutation } from '../../services/UserAPI';
 
 const AdminDashboardPage = () => {
   const location = useLocation();
@@ -81,6 +83,7 @@ const AdminDashboardPage = () => {
     { path: '/admin/manage-scholarships', label: 'Quản Lý Học Bổng', icon: <GraduationCap className="h-5 w-5" /> },
     { path: '/admin/manage-requirements', label: 'Quản Lý Yêu Cầu', icon: <CheckCircle className="h-5 w-5" /> },
     { path: '/admin/manage-applications', label: 'Quản Lý Hồ Sơ', icon: <Briefcase className="h-5 w-5" /> },
+    { path: '/admin/manage-mentors', label: 'Quản Lý Mentor', icon: <User className="h-5 w-5" /> },
     { path: '/admin/settings', label: 'Cài Đặt', icon: <Settings className="h-5 w-5" /> },
 
   ];
@@ -185,25 +188,6 @@ const StatCard = ({ title, value, icon, trend }) => (
     </Card>
   </motion.div>
 );
-
-// MOCK DATA
-const initialUsers = [
-  { id: 'usr001', name: 'Nguyễn Văn An', email: 'an.nv@example.com', role: 'user', joinedDate: '2024-01-15', isVip: true, applications: 5 },
-  { id: 'usr002', name: 'Trần Thị Bình', email: 'binh.tt@example.com', role: 'user', joinedDate: '2024-02-20', isVip: false, applications: 2 },
-  { id: 'usr003', name: 'Lê Văn Cường', email: 'cuong.lv@example.com', role: 'admin', joinedDate: '2023-12-01', isVip: true, applications: 0 },
-];
-
-const initialSchools = [
-  { id: 'sch001', name: 'Đại học Bách Khoa Hà Nội', location: 'Hà Nội', website: 'hust.edu.vn', scholarshipsCount: 15 },
-  { id: 'sch002', name: 'Đại học Kinh Tế Quốc Dân', location: 'Hà Nội', website: 'neu.edu.vn', scholarshipsCount: 10 },
-  { id: 'sch003', name: 'RMIT University Vietnam', location: 'TP.HCM', website: 'rmit.edu.vn', scholarshipsCount: 25 },
-];
-const initialScholarships = [
-  { id: 'schol001', name: 'Học bổng Tài năng Trẻ', schoolId: 'sch001', schoolName: 'Đại học Bách Khoa Hà Nội', amount: '50% học phí', deadline: '2025-09-30', field: 'Kỹ thuật' },
-  { id: 'schol002', name: 'Học bổng Doanh nhân Tương lai', schoolId: 'sch002', schoolName: 'Đại học Kinh Tế Quốc Dân', amount: 'Toàn phần', deadline: '2025-08-15', field: 'Kinh doanh' },
-  { id: 'schol003', name: 'Creative Innovators Scholarship', schoolId: 'sch003', schoolName: 'RMIT University Vietnam', amount: '$10,000', deadline: '2025-10-01', field: 'Thiết kế, Truyền thông' },
-];
-
 // Shared Form Dialog Component
 const CrudFormDialog = ({ open, onOpenChange, entity, onSave, formFields, entityName, currentData = null }) => {
   const [formData, setFormData] = useState({});
@@ -1076,6 +1060,96 @@ export const ManageRequirementsPage = () => {
           </TableBody>
         </Table>
       </Card>
+    </div>
+  );
+};
+
+export const ManageMentorsPage = () => {
+  const { data, isLoading, error, refetch } = useGetMentorsQuery();
+  const [approveMentor] = useApproveMentorMutation();
+  const [rejectMentor] = useRejectMentorMutation();
+  const { toast } = useToast();
+  const [rejectDialog, setRejectDialog] = useState({ open: false, mentor: null, reason: '' });
+  const navigate = useNavigate();
+
+  const handleApprove = async (id) => {
+    try {
+      await approveMentor(id).unwrap();
+      toast({ title: 'Duyệt mentor thành công!', className: 'bg-green-500 text-white' });
+      refetch();
+    } catch (err) {
+      toast({ title: 'Lỗi duyệt mentor', description: err?.data?.message || 'Lỗi không xác định', className: 'bg-red-500 text-white' });
+    }
+  };
+  const handleReject = async () => {
+    try {
+      await rejectMentor({ id: rejectDialog.mentor._id, reason: rejectDialog.reason }).unwrap();
+      toast({ title: 'Từ chối mentor thành công!', className: 'bg-green-500 text-white' });
+      setRejectDialog({ open: false, mentor: null, reason: '' });
+      refetch();
+    } catch (err) {
+      toast({ title: 'Lỗi từ chối mentor', description: err?.data?.message || 'Lỗi không xác định', className: 'bg-red-500 text-white' });
+    }
+  };
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-gradient-primary mb-6">Quản Lý Mentor</h1>
+      <Card className="glass-card p-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Họ tên</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Chuyên ngành</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-right">Hành động</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && <TableCell colSpan={5} className="text-center">Đang tải...</TableCell>}
+            {error && <TableCell colSpan={5} className="text-center">Lỗi: {error.message}</TableCell>}
+            {data?.data?.map((mentor) => (
+              <TableRow key={mentor._id}>
+                <TableCell>
+                  <span
+                    className="text-blue-600 hover:underline cursor-pointer"
+                    onClick={() => navigate(`/admin/mentor/${mentor._id}`)}
+                  >
+                    {mentor.firstName} {mentor.lastName}
+                  </span>
+                </TableCell>
+                <TableCell>{mentor.email}</TableCell>
+                <TableCell>{mentor.mentorProfile?.major}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${mentor.mentorStatus === 'approved' ? 'bg-green-100 text-green-700' : mentor.mentorStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{mentor.mentorStatus}</span>
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  {mentor.mentorStatus === 'pending' && (
+                    <>
+                      <Button size="sm" variant="success" onClick={() => handleApprove(mentor._id)}>Duyệt</Button>
+                      <Button size="sm" variant="destructive" onClick={() => setRejectDialog({ open: true, mentor, reason: '' })}>Từ chối</Button>
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+      <Dialog open={rejectDialog.open} onOpenChange={open => setRejectDialog(d => ({ ...d, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Từ chối mentor</DialogTitle>
+            <DialogDescription>Nhập lý do từ chối mentor <b>{rejectDialog.mentor?.firstName} {rejectDialog.mentor?.lastName}</b></DialogDescription>
+          </DialogHeader>
+          <Textarea value={rejectDialog.reason} onChange={e => setRejectDialog(d => ({ ...d, reason: e.target.value }))} placeholder="Nhập lý do từ chối..." />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog({ open: false, mentor: null, reason: '' })}>Hủy</Button>
+            <Button variant="destructive" onClick={handleReject}>Từ chối</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

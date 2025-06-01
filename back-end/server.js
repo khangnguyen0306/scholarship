@@ -16,7 +16,7 @@ import ScholarshipMatchRoute from './routes/Scholarship.match.route.js';
 import BlogRoute from './routes/Blog.route.js';
 import CommentRoute from './routes/Comment.route.js';
 import ApplicationRoute from './routes/Application.route.js';
-
+import MentorRoute from './routes/Mentor.route.js';
 import cors from 'cors';
 
 
@@ -43,7 +43,7 @@ app.use('/api/scholarships', ScholarshipMatchRoute);
 app.use('/api/blogs', BlogRoute);
 app.use('/api/comments', CommentRoute);
 app.use('/api/applications', ApplicationRoute);
-
+app.use('/api/mentors', MentorRoute);
 
 
 const specs = swaggerJsdoc(swaggerOptions);

@@ -98,6 +98,15 @@ const authUser = asyncHandler(async (req, res) => {
       res.status(401);
       throw new Error("Email chưa được xác thực. Vui lòng kiểm tra email của bạn.");
     }
+    // Nếu là mentor, chỉ cho đăng nhập khi đã được duyệt
+    if (user.role === 'mentor' && user.mentorStatus !== 'approved') {
+      res.status(403);
+      throw new Error(
+        user.mentorStatus === 'pending'
+          ? "Tài khoản mentor của bạn đang chờ admin duyệt. Vui lòng quay lại sau."
+          : "Tài khoản mentor của bạn đã bị từ chối. Vui lòng liên hệ admin để biết thêm chi tiết."
+      );
+    }
     res.json({
       success: true,
       data: {
@@ -1178,6 +1187,223 @@ const adminCreateUser = asyncHandler(async (req, res) => {
     },
     message: "Tạo user thành công, mật khẩu đã gửi về email"
   });
+});
+
+/**
+ * @swagger
+ * /api/users/register-mentor:
+ *   post:
+ *     summary: Đăng ký mentor mới
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - firstName
+ *               - lastName
+ *               - mentorProfile
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               mentorProfile:
+ *                 type: object
+ *                 properties:
+ *                   major:
+ *                     type: string
+ *                   experience:
+ *                     type: string
+ *                   bio:
+ *                     type: string
+ *                   phone:
+ *                     type: string
+ *                   degrees:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         name:
+ *                           type: string
+ *                         institution:
+ *                           type: string
+ *                         year:
+ *                           type: number
+ *                   languages:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *     responses:
+ *       201:
+ *         description: Đăng ký mentor thành công, chờ admin duyệt
+ *       400:
+ *         description: Email đã tồn tại hoặc dữ liệu không hợp lệ
+ */
+export const registerMentor = asyncHandler(async (req, res) => {
+  const { email, password, firstName, lastName, mentorProfile } = req.body;
+  if (!email || !password || !firstName || !lastName || !mentorProfile) {
+    res.status(400);
+    throw new Error("Thiếu thông tin bắt buộc");
+  }
+  const userExists = await Auth.findOne({ email });
+  if (userExists) {
+    res.status(400);
+    throw new Error("Email đã tồn tại");
+  }
+  const newUser = await Auth.create({
+    email,
+    passwordHash: password,
+    firstName,
+    lastName,
+    role: "mentor",
+    mentorProfile,
+    mentorStatus: "pending",
+    isEmailVerified: false
+  });
+  res.status(201).json({
+    success: true,
+    data: {
+      _id: newUser._id,
+      email: newUser.email,
+      role: newUser.role,
+      mentorStatus: newUser.mentorStatus
+    },
+    message: "Đăng ký mentor thành công. Tài khoản của bạn sẽ được duyệt bởi admin trước khi sử dụng."
+  });
+});
+
+/**
+ * @swagger
+ * /api/mentors:
+ *   get:
+ *     summary: Lấy danh sách mentor (có thể filter theo status)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, approved, rejected]
+ *         description: Lọc theo trạng thái duyệt
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách mentor thành công
+ */
+export const getMentors = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+  const filter = { role: 'mentor' };
+  if (status) filter.mentorStatus = status;
+  const mentors = await Auth.find(filter).select('-passwordHash -verificationCode -verificationCodeExpires -emailVerificationToken');
+  res.json({ status: 200, message: "Lấy danh sách mentor thành công", data: mentors });
+});
+
+/**
+ * @swagger
+ * /api/mentors/{id}/approve:
+ *   put:
+ *     summary: Admin duyệt mentor
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID mentor
+ *     responses:
+ *       200:
+ *         description: Mentor đã được duyệt
+ *       404:
+ *         description: Không tìm thấy mentor
+ */
+export const approveMentor = asyncHandler(async (req, res) => {
+  const mentor = await Auth.findById(req.params.id);
+  if (!mentor || mentor.role !== 'mentor') {
+    return res.status(404).json({ status: 404, message: "Không tìm thấy mentor" });
+  }
+  mentor.mentorStatus = 'approved';
+  mentor.isEmailVerified = true;
+  await mentor.save();
+
+  // Gửi email thông báo chấp nhận
+  if (mentor.email) {
+    const mailOptions = {
+      to: mentor.email,
+      subject: "Chúc mừng! Hồ sơ mentor của bạn đã được duyệt",
+      text: `Xin chào ${mentor.firstName || ''} ${mentor.lastName || ''},\n\nHồ sơ đăng ký mentor của bạn đã được admin duyệt thành công.\nBạn có thể đăng nhập và sử dụng các chức năng mentor trên hệ thống.\n\nTrân trọng!`,
+      html: `<p>Xin chào <b>${mentor.firstName || ''} ${mentor.lastName || ''}</b>,</p><p>Hồ sơ đăng ký mentor của bạn đã được <b>admin duyệt thành công</b>!</p><p>Bạn có thể đăng nhập và sử dụng các chức năng mentor trên hệ thống.</p><p>Trân trọng!</p>`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Lỗi gửi email duyệt mentor:", error);
+      }
+    });
+  }
+
+  res.json({ status: 200, message: "Mentor đã được duyệt", data: mentor });
+});
+
+/**
+ * @swagger
+ * /api/mentors/{id}/reject:
+ *   put:
+ *     summary: Admin từ chối mentor
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID mentor
+ *     responses:
+ *       200:
+ *         description: Mentor đã bị từ chối
+ *       404:
+ *         description: Không tìm thấy mentor
+ */
+export const rejectMentor = asyncHandler(async (req, res) => {
+  const mentor = await Auth.findById(req.params.id);
+  if (!mentor || mentor.role !== 'mentor') {
+    return res.status(404).json({ status: 404, message: "Không tìm thấy mentor" });
+  }
+  mentor.mentorStatus = 'rejected';
+  await mentor.save();
+
+  // Lý do từ chối từ admin (nếu có)
+  const reason = req.body.reason || '';
+
+  // Gửi email thông báo từ chối
+  if (mentor.email) {
+    const mailOptions = {
+      to: mentor.email,
+      subject: "Thông báo từ chối đăng ký mentor",
+      text: `Xin chào ${mentor.firstName || ''} ${mentor.lastName || ''},\n\nChúng tôi rất tiếc phải thông báo rằng hồ sơ đăng ký mentor của bạn đã bị từ chối.\n${reason ? 'Lý do: ' + reason + '\n' : ''}Nếu cần thêm thông tin, vui lòng liên hệ admin.\n\nTrân trọng.`,
+      html: `<p>Xin chào <b>${mentor.firstName || ''} ${mentor.lastName || ''}</b>,</p><p>Chúng tôi rất tiếc phải thông báo rằng hồ sơ đăng ký mentor của bạn đã <b>bị từ chối</b>.</p>${reason ? `<p><b>Lý do:</b> ${reason}</p>` : ''}<p>Nếu cần thêm thông tin, vui lòng liên hệ admin.</p><p>Trân trọng.</p>`
+    };
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Lỗi gửi email từ chối mentor:", error);
+      }
+    });
+  }
+
+  res.json({ status: 200, message: "Mentor đã bị từ chối", data: mentor });
 });
 
 export { authUser, registerUser, forgotPassword, verifyCode, resetPassword, changePassword, verifyEmail, updateProfile, getAllUsers, getUserProfileById, adminUpdateUser, adminBlockUser, adminCreateUser };

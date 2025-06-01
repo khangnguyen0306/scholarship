@@ -25,41 +25,46 @@ const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
 const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
 
 
-const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
 
 // Correctly lazy load Admin sub-components
 const AdminOverview = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.AdminOverview || (() => <div>Admin Overview Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.AdminOverview };
 });
 const ManageSchoolsPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.ManageSchoolsPage || (() => <div>Manage Schools Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ManageSchoolsPage };
 });
 const ManageScholarshipsPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.ManageScholarshipsPage || (() => <div>Manage Scholarships Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ManageScholarshipsPage };
 });
 const ManageUsersPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.ManageUsersPage || (() => <div>Manage Users Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ManageUsersPage };
 });
 const ManageApplicationsPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.ManageApplicationsPage || (() => <div>Manage Applications Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ManageApplicationsPage };
 });
 const AdminSettingsPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.AdminSettingsPage || (() => <div>Admin Settings Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.AdminSettingsPage };
 });
 const ApplicationDetailPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.ApplicationDetailPage || (() => <div>Application Detail Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ApplicationDetailPage };
 });
 const ManageRequirementsPage = lazy(async () => {
-  const module = await import('@/pages/AdminDashboardPage');
-  return { default: module.ManageRequirementsPage || (() => <div>Manage Requirements Placeholder</div>) };
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ManageRequirementsPage };
 });
+const ManageMentorsPage = lazy(async () => {
+  const module = await import('@/pages/admin/AdminDashboardPage');
+  return { default: module.ManageMentorsPage };
+});
+const MentorDetailPage = lazy(() => import('@/pages/admin/MentorDetailPage'));
 
 
 const LoadingFallback = () => (
@@ -113,6 +118,8 @@ function App() {
                 <Route path="application/:id" element={<ApplicationDetailPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
                 <Route path="manage-requirements" element={<ManageRequirementsPage />} />
+                <Route path="manage-mentors" element={<ManageMentorsPage />} />
+                <Route path="mentor/:id" element={<MentorDetailPage />} />
               </Route>
 
               {/* Fallback for non-matched routes */}

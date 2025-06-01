@@ -76,6 +76,15 @@ export const authApi = createApi({
         body: { email },
       }),
     }),
+    registerMentor: builder.mutation({
+      query: (body) => ({
+        url: `users/register-mentor`,
+        method: "POST",
+        body,
+      }),
+    }),
+
+  
   }),
 });
 
@@ -87,6 +96,8 @@ export const {
   useResetPasswordMutation,
   useChangePasswordMutation,
   useVerifyEmailMutation,
+  useRegisterMentorMutation,
+
   //   useVerifyMailMutation,
   //   useVerifyOtpMutation,
   //   useRefreshTokenMutation,
