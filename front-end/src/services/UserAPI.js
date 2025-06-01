@@ -74,6 +74,48 @@ export const UserAPI = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: "MentorList", id: "LIST" }],
     }),
+    createRating: builder.mutation({
+      query: (data) => ({
+        url: `/ratings`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+    getRating: builder.query({
+      query: (id) => ({
+        url: `/ratings/mentor/${id}`,
+        method: "GET",
+      }),
+    }),
+
+    createConnectionRequest: builder.mutation({
+      query: ({ mentorId }) => ({
+        url: `/mentor-requests`,
+        method: "POST",
+        body: { mentorId },
+      }),
+    }),
+
+    getConnectionRequests: builder.query({
+      query: () => ({
+        url: `/mentor-requests`,
+        method: "GET",
+      }),
+    }),
+    acceptConnectionRequest: builder.mutation({
+      query: (id) => ({
+        url: `/mentor-requests/${id}/accept`,
+        method: "PATCH",
+      }),
+    }),
+
+    rejectConnectionRequest: builder.mutation({
+      query: ({ id, reason }) => ({
+        url: `/mentor-requests/${id.toString()}/reject`,
+        method: "PATCH",
+        body: { reason },
+      }),
+    }),
   }),
   //   overrideExisting: false,
 });
@@ -88,4 +130,10 @@ export const {
   useGetMentorsQuery,
   useApproveMentorMutation,
   useRejectMentorMutation,
+  useCreateRatingMutation,
+  useGetRatingQuery,
+  useCreateConnectionRequestMutation,
+  useGetConnectionRequestsQuery,
+  useAcceptConnectionRequestMutation,
+  useRejectConnectionRequestMutation,
 } = UserAPI;

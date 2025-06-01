@@ -11,10 +11,10 @@ export const uploadApi = createApi({
 
 
     uploadFile: builder.mutation({
-      query: ({ file }) => ({
+      query: (formData) => ({
         url: `upload/local-upload`,
         method: "POST",
-        body: { file },
+        body: formData,
       }),
     }),
 
@@ -29,10 +29,16 @@ export const uploadApi = createApi({
     }),
 
     getFile: builder.mutation({
-      query: ({ filename }) => {
+      query: ({ fileUrl, originalName }) => {
+        const urlParts = fileUrl.split('/');
+        const filename = urlParts[urlParts.length - 1];
         return {
           method: "GET",
           url: `upload/local-file/${filename}`,
+          params: {
+            originalName: originalName,
+          },
+          responseHandler: (response) => response.blob(),
         };
       },
     }),

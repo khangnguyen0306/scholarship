@@ -881,7 +881,19 @@ const getUserProfileById = asyncHandler(async (req, res) => {
   if (!user) {
     return res.status(404).json({ status: 404, message: "Không tìm thấy người dùng" });
   }
-  res.json({ status: 200, message: "Lấy thông tin user thành công", data: user });
+  let extra = {};
+  if (user.role === 'mentor') {
+    const Rating = (await import('../models/Rating.model.js')).default;
+    const agg = await Rating.aggregate([
+      { $match: { mentorId: user._id } },
+      { $group: { _id: null, avgRating: { $avg: '$stars' }, ratingCount: { $sum: 1 } } }
+    ]);
+    extra = {
+      ratingCount: agg[0]?.ratingCount || 0,
+      avgRating: agg[0]?.avgRating ? Number(agg[0].avgRating.toFixed(2)) : 0
+    };
+  }
+  res.json({ status: 200, message: "Lấy thông tin user thành công", data: { ...user.toObject(), ...extra } });
 });
 
 /**
@@ -1305,8 +1317,28 @@ export const getMentors = asyncHandler(async (req, res) => {
   const { status } = req.query;
   const filter = { role: 'mentor' };
   if (status) filter.mentorStatus = status;
+  // Lấy danh sách mentor
   const mentors = await Auth.find(filter).select('-passwordHash -verificationCode -verificationCodeExpires -emailVerificationToken');
-  res.json({ status: 200, message: "Lấy danh sách mentor thành công", data: mentors });
+
+  // Lấy rating trung bình cho từng mentor
+  const mentorIds = mentors.map(m => m._id);
+  const ratingsAgg = await (await import('../models/Rating.model.js')).default.aggregate([
+    { $match: { mentorId: { $in: mentorIds } } },
+    { $group: { _id: '$mentorId', avgRating: { $avg: '$stars' }, ratingCount: { $sum: 1 } } }
+  ]);
+  // Map rating về mentor
+  const ratingMap = {};
+  ratingsAgg.forEach(r => {
+    ratingMap[r._id.toString()] = { avgRating: r.avgRating || 0, ratingCount: r.ratingCount };
+  });
+  // Gắn rating vào mentor
+  const mentorsWithRating = mentors.map(m => {
+    const rating = ratingMap[m._id.toString()] || { avgRating: 0, ratingCount: 0 };
+    return { ...m.toObject(), avgRating: Number(rating.avgRating?.toFixed(2)), ratingCount: rating.ratingCount };
+  });
+  // Sắp xếp theo avgRating giảm dần
+  mentorsWithRating.sort((a, b) => b.avgRating - a.avgRating);
+  res.json({ status: 200, message: "Lấy danh sách mentor thành công", data: mentorsWithRating });
 });
 
 /**

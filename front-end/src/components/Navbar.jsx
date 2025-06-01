@@ -55,6 +55,7 @@ const Navbar = () => {
             <NavLink to="/schools" icon={<BookOpen className="h-5 w-5 mr-1" />}>Trường học</NavLink>
             <NavLink to="/scholarships" icon={<Award className="h-5 w-5 mr-1" />}>Học bổng</NavLink>
             <NavLink to="/blog" icon={<Newspaper className="h-5 w-5 mr-1" />}>Blog</NavLink>
+            <NavLink to="/mentors" icon={<UserCircle className="h-5 w-5 mr-1" />}>Mentor</NavLink>
             {user && (
               <NavLink to="/chat" icon={<MessageCircle className="h-5 w-5 mr-1" />}>Chat</NavLink>
             )}
@@ -95,6 +96,12 @@ const Navbar = () => {
                      <DropdownMenuItem onClick={() => navigate('/admin')}>
                         <ShieldCheck className="mr-2 h-4 w-4" />
                         <span>Quản trị</span>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'mentor' && (
+                    <DropdownMenuItem onClick={() => navigate('/mentor-requests')}>
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      <span>Yêu cầu kết nối</span>
                     </DropdownMenuItem>
                   )}
                   {!user.isPremium && user.role == 'student' && (

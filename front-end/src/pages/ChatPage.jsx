@@ -4,13 +4,13 @@ import { selectCurrentUser } from '../slices/authSlice';
 import { io } from 'socket.io-client';
 import { Button } from '@/components/ui/button';
 import { useLazyGetChatInboxQuery, useLazyGetChatRoomsQuery, useMarkAsReadMutation } from '../services/ChatAPI';
-import { ChevronsDown, Download, Image, Loader2, Paperclip, Smile } from 'lucide-react';
+import { ChevronsDown, Download, Image, Loader2, Paperclip, Smile, Star } from 'lucide-react';
 import defaultAvatar from '../../public/images/av1.svg';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
-import axios from 'axios';
 import { useUploadFileCloudinaryMutation, useGetFileMutation, useUploadFileMutation } from '../services/UploadAPI';
-
+import { useCreateRatingMutation } from '../services/UserAPI';
+import { useToast } from '@/components/ui/use-toast';
 const SOCKET_URL = 'http://localhost:3000';
 // const SOCKET_URL = import.meta.env.VITE_BE_API;
 
@@ -18,6 +18,7 @@ let socket;
 
 const ChatPage = () => {
     const user = useSelector(selectCurrentUser);
+    const { toast } = useToast();
     const [rooms, setRooms] = useState([]);
     const [isLoadingRooms, setIsLoadingRooms] = useState(false);
     const [currentRoom, setCurrentRoom] = useState(null);
@@ -36,14 +37,17 @@ const ChatPage = () => {
     const [uploadFileCloudinary] = useUploadFileCloudinaryMutation();
     const [uploadFile] = useUploadFileMutation();
     const [getFile] = useGetFileMutation();
+    const [createRating] = useCreateRatingMutation();
     const [showImageModal, setShowImageModal] = useState(false);
     const [modalImageUrl, setModalImageUrl] = useState('');
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [ratingStars, setRatingStars] = useState(0);
 
     // Kết nối socket và join tất cả room
     useEffect(() => {
         if (!user) return;
         socket = io(SOCKET_URL, { transports: ['websocket'] });
-
         // Lấy danh sách phòng chat
         const fetchRooms = async () => {
             setIsLoadingRooms(true);
@@ -121,18 +125,25 @@ const ChatPage = () => {
             alert('File quá lớn (tối đa 10MB)');
             return;
         }
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await uploadFileCloudinary(formData);
-        const fileUrl = res.data.url;
+        setUploadingImage(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await uploadFileCloudinary(formData);
+            const fileUrl = res.data.url;
 
-        socket.emit('send_message', {
-            roomId: currentRoom._id,
-            senderId: user._id,
-            type: 'image',
-            fileUrl,
-            fileName: file.name
-        });
+            socket.emit('send_message', {
+                roomId: currentRoom._id,
+                senderId: user._id,
+                type: 'image',
+                fileUrl,
+                fileName: file.name
+            });
+        } catch (err) {
+            alert('Lỗi khi upload ảnh!');
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     // Gửi file tài liệu (local)
@@ -149,9 +160,8 @@ const ChatPage = () => {
         }
         const formData = new FormData();
         formData.append('file', file);
-        const res = await axios.post('/api/upload/local-upload', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const res = await uploadFile(formData);
+        console.log(res);
         const fileUrl = res.data.fileUrl;
         socket.emit('send_message', {
             roomId: currentRoom._id,
@@ -162,7 +172,7 @@ const ChatPage = () => {
         });
     };
 
-    console.log(messages);
+    // console.log(messages);
     // Auto scroll to bottom
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -192,6 +202,24 @@ const ChatPage = () => {
             window.URL.revokeObjectURL(url);
         } catch (err) {
             alert('Không thể tải ảnh. Có thể do CORS hoặc lỗi mạng.');
+        }
+    };
+
+    const handleDownloadFile = async ({ fileUrl, originalName }) => {
+        try {
+            const blob = await getFile({ fileUrl, originalName }).unwrap();
+            // console.log('blob:', blob, 'type:', typeof blob, 'instanceof Blob:', blob instanceof Blob);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = originalName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.log(err);
+            // alert('Không thể tải file. Có thể do CORS hoặc lỗi mạng.');
         }
     };
 
@@ -233,8 +261,19 @@ const ChatPage = () => {
             {/* Khung chat */}
             <div className="relative flex-1 flex flex-col rounded-md">
                 {currentRoom ? (
-                    <div className="mb-2 font-semibold text-white p-5 bg-blue-600">
-                        Chat với {user._id === currentRoom.studentId._id ? currentRoom.mentorId.firstName + ' ' + currentRoom.mentorId.lastName : currentRoom.studentId.firstName + ' ' + currentRoom.studentId.lastName}
+                    <div className="mb-2 font-semibold text-white p-5 bg-blue-600 flex items-center justify-between">
+                        <span>
+                            Chat với {user._id === currentRoom.studentId._id ? currentRoom.mentorId.firstName + ' ' + currentRoom.mentorId.lastName : currentRoom.studentId.firstName + ' ' + currentRoom.studentId.lastName}
+                        </span>
+                        {user.role === 'student' && (
+                            <Button
+                                size="sm"
+                                className="bg-white text-yellow-400 ml-4 hover:bg-yellow-400 hover:text-white"
+                                onClick={() => { setShowRatingModal(true); setRatingStars(0); }}
+                        >
+                            <span className="flex items-center gap-2">Đánh giá mentor <Star fill='#facc15'/></span>
+                        </Button>
+                        )}
                     </div>
                 ) : (
                     null
@@ -279,10 +318,11 @@ const ChatPage = () => {
                                                     <div key={msg._id} className={`mb-2 flex ${msg.senderId._id === user._id ? 'justify-end' : 'justify-start'}`}>
                                                         <div className={`px-3 py-2 rounded-lg border ${msg.senderId._id === user._id ? 'bg-blue-50' : 'bg-gray-100'}`}>
                                                             <a
-                                                                href={msg.fileUrl + '?originalName=' + encodeURIComponent(msg.fileName)}
-                                                                download={msg.fileName}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
+                                                                href="#"
+                                                                onClick={e => {
+                                                                    e.preventDefault();
+                                                                    handleDownloadFile({ fileUrl: msg.fileUrl, originalName: msg.fileName });
+                                                                }}
                                                                 className="text-blue-600 underline"
                                                             >
                                                                 📎 {msg.fileName}
@@ -344,7 +384,13 @@ const ChatPage = () => {
                             ref={fileInputRef}
                             onChange={handleFileChange}
                         />
-                        <Button onClick={() => fileInputRef.current.click()} variant="outline" className="ml-2   hover:bg-gray-600 transition">
+                        {uploadingImage && (
+                            <div className="absolute left-1/2 bottom-24 -translate-x-1/2 flex items-center gap-2 bg-white px-4 py-2 rounded shadow z-50 border border-blue-200">
+                                <Loader2 className="animate-spin text-blue-600" />
+                                <span>Đang gửi ảnh...</span>
+                            </div>
+                        )}
+                        <Button onClick={() => fileInputRef.current.click()} variant="outline" className="ml-2   hover:bg-gray-600 transition" disabled={uploadingImage}>
                             <Image />
                         </Button>
                         <Button variant="outline" onClick={() => setShowEmojiPicker(v => !v)} className="ml-2   hover:bg-gray-600 transition">
@@ -398,6 +444,76 @@ const ChatPage = () => {
                         >
                             &times;
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {showRatingModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 shadow-lg min-w-[620px]">
+                        <h2 className="text-lg font-bold mb-4">Đánh giá mentor</h2>
+                        <form
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                const stars = ratingStars;
+                                if (!stars) {
+                                    alert('Vui lòng chọn số sao!');
+                                    return;
+                                }
+                                const comment = e.target.comment.value;
+                                try {
+                                    const res = await createRating({
+                                        mentorId: user._id === currentRoom.studentId._id ? currentRoom.mentorId._id : currentRoom.studentId._id,
+                                        roomId: currentRoom._id,
+                                        stars,
+                                        comment,
+                                    });
+                                    // console.log(res);
+                                    if(res.error ) {
+                                        toast({
+                                            title: "Lỗi đánh giá",
+                                            description: res.error.data.error.message,
+                                            variant: "destructive",
+                                          });
+                                        return;
+                                    }else{
+                                        toast({
+                                            title: "Đánh giá thành công",
+                                            description: res.data.message,
+                                            className: "bg-green-500 text-white",
+                                          });
+                                        setShowRatingModal(false);
+                                    }
+                                } catch (err) {
+                                    console.log(err);
+                                    toast({
+                                        title: "Lỗi đánh giá",
+                                        description: "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.",
+                                        variant: "destructive",
+                                      });
+                                }
+                            }}
+                        >
+                            <label className="block mb-2">Số sao:</label>
+                            <div className="flex items-center gap-1 mb-4">
+                                {[1,2,3,4,5].map(n => (
+                                    <Star
+                                        key={n}
+                                        size={32}
+                                        className="cursor-pointer"
+                                        fill={n <= ratingStars ? '#facc15' : '#ffffff'}
+                                        stroke="#facc15"
+                                        onClick={() => setRatingStars(n)}
+                                    />
+                                ))}
+                            </div>
+                            <label className="block mb-2">Nhận xét:</label>
+                            <textarea name="comment" className="border rounded px-2 py-1 mb-4 w-full" rows={3} />
+                            <div className="flex justify-end gap-2">
+                                <Button type="button" className="bg-gray-400 text-white hover:bg-gray-500" onClick={() => setShowRatingModal(false)}>Hủy</Button>
+                                <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700">Gửi đánh giá</Button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

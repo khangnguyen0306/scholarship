@@ -1,6 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import MentorRequest from '../models/MentorRequest.model.js';
 import ChatRoom from '../models/ChatRoom.model.js';
+import Auth from '../models/Auth.model.js';
+import transporter from '../utils/MailserVices.js';
 
 /**
  * @swagger
@@ -46,6 +48,23 @@ export const createMentorRequest = asyncHandler(async (req, res) => {
     throw new Error('Bạn đã gửi yêu cầu tới mentor này hoặc đã có phòng chat!');
   }
   const request = await MentorRequest.create({ studentId, mentorId });
+
+  // Gửi email thông báo cho mentor
+  try {
+    const mentor = await Auth.findById(mentorId);
+    const student = await Auth.findById(studentId);
+    if (mentor?.email) {
+      await transporter.sendMail({
+        to: mentor.email,
+        subject: 'Bạn có yêu cầu kết nối mới từ học sinh',
+        text: `Xin chào ${mentor.firstName} ${mentor.lastName},\n\nBạn vừa nhận được một yêu cầu kết nối mới từ học sinh ${student.firstName} ${student.lastName} (${student.email}).\n\nVui lòng đăng nhập vào hệ thống để xem chi tiết và phản hồi.`,
+        html: `<p>Xin chào <b>${mentor.firstName} ${mentor.lastName}</b>,</p><p>Bạn vừa nhận được một <b>yêu cầu kết nối mới</b> từ học sinh <b>${student.firstName} ${student.lastName}</b> (${student.email}).</p><p>Vui lòng đăng nhập vào hệ thống để xem chi tiết và phản hồi.</p>`
+      });
+    }
+  } catch (err) {
+    console.error('Lỗi gửi email thông báo mentor:', err);
+  }
+
   res.status(201).json({ success: true, data: request });
 });
 
@@ -109,6 +128,21 @@ export const acceptMentorRequest = asyncHandler(async (req, res) => {
   if (!room) {
     room = await ChatRoom.create({ studentId: request.studentId, mentorId: request.mentorId });
   }
+  // Gửi email cho học sinh
+  try {
+    const student = await Auth.findById(request.studentId);
+    const mentor = await Auth.findById(request.mentorId);
+    if (student?.email) {
+      await transporter.sendMail({
+        to: student.email,
+        subject: 'Yêu cầu kết nối đã được chấp nhận',
+        text: `Xin chào ${student.firstName} ${student.lastName},\n\nMentor ${mentor.firstName} ${mentor.lastName} đã chấp nhận yêu cầu kết nối của bạn.\n\nBạn có thể bắt đầu trò chuyện và trao đổi với mentor trên hệ thống.`,
+        html: `<p>Xin chào <b>${student.firstName} ${student.lastName}</b>,</p><p>Mentor <b>${mentor.firstName} ${mentor.lastName}</b> đã <b>chấp nhận</b> yêu cầu kết nối của bạn.</p><p>Bạn có thể bắt đầu trò chuyện và trao đổi với mentor trên hệ thống.</p>`
+      });
+    }
+  } catch (err) {
+    console.error('Lỗi gửi email chấp nhận kết nối:', err);
+  }
   res.json({ success: true, data: { request, room } });
 });
 
@@ -148,5 +182,21 @@ export const rejectMentorRequest = asyncHandler(async (req, res) => {
   }
   request.status = 'rejected';
   await request.save();
+  // Gửi email cho học sinh
+  try {
+    const student = await Auth.findById(request.studentId);
+    const mentor = await Auth.findById(request.mentorId);
+    const reason = req.body.reason || '';
+    if (student?.email) {
+      await transporter.sendMail({
+        to: student.email,
+        subject: 'Yêu cầu kết nối bị từ chối',
+        text: `Xin chào ${student.firstName} ${student.lastName},\n\nMentor ${mentor.firstName} ${mentor.lastName} đã từ chối yêu cầu kết nối của bạn.${reason ? '\n\nLý do: ' + reason : ''}\n\nBạn có thể thử gửi yêu cầu tới mentor khác hoặc liên hệ lại sau.`,
+        html: `<p>Xin chào <b>${student.firstName} ${student.lastName}</b>,</p><p>Mentor <b>${mentor.firstName} ${mentor.lastName}</b> đã <b>từ chối</b> yêu cầu kết nối của bạn.</p>${reason ? `<p><b>Lý do:</b> ${reason}</p>` : ''}<p>Bạn có thể thử gửi yêu cầu tới mentor khác hoặc liên hệ lại sau.</p>`
+      });
+    }
+  } catch (err) {
+    console.error('Lỗi gửi email từ chối kết nối:', err);
+  }
   res.json({ success: true, data: request });
 }); 

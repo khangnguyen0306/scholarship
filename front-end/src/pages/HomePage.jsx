@@ -1,12 +1,14 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Search, Star, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useGetSchoolsQuery } from '../services/SchoolAPI';
 
 const HomePage = () => {
+  const { data: schools } = useGetSchoolsQuery({ limit: 10 });
+  console.log(schools);
   const featureVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
@@ -62,11 +64,7 @@ const HomePage = () => {
                 Tìm Học Bổng Ngay <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6 shadow-lg">
-              <Link to="/how-it-works">
-                Cách Hoạt Động
-              </Link>
-            </Button>
+         
           </motion.div>
         </div>
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -177,58 +175,36 @@ const HomePage = () => {
       </section>
 
       <section className="container mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-12">Đối tác của chúng tôi</h2>
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
-          
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <img   
-                alt="University Logo 1" 
-                class="h-16 grayscale hover:grayscale-0 transition-all duration-300"
-                src="https://images.unsplash.com/photo-1685098176312-f61787bd0adf" />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <img   
-                alt="University Logo 2" 
-                class="h-16 grayscale hover:grayscale-0 transition-all duration-300"
-                src="https://images.unsplash.com/photo-1695132775168-530e5f89d0b4" />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <img   
-                alt="University Logo 3" 
-                class="h-16 grayscale hover:grayscale-0 transition-all duration-300"
-                src="https://images.unsplash.com/photo-1690140281114-82133f5a040f" />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <img   
-                alt="University Logo 4" 
-                class="h-16 grayscale hover:grayscale-0 transition-all duration-300"
-                src="https://images.unsplash.com/photo-1685722624202-c84f60443677" />
-            </motion.div>
-          
-        </div>
+        <h2 className="text-4xl font-bold text-center mb-6">Top Trường Nổi Bật</h2>
+        {schools?.data?.length > 0 && (
+          <div className="flex overflow-x-auto gap-6 py-4 hide-scrollbar">
+            {schools.data.map((school) => (
+              <Link to={`/schools/${school._id}`} key={school._id} className="min-w-[260px] max-w-xs flex-shrink-0">
+                <Card className="h-full hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1 glass-card">
+                  <CardHeader className="items-center text-center pb-2">
+                    {school.logo ? (
+                      <img src={school.logo} alt={school.name} className="h-20 w-20 object-contain mx-auto mb-2 rounded-full bg-white border" />
+                    ) : (
+                      <div className="h-16 w-16 rounded-full bg-gray-200 mx-auto mb-2 flex items-center justify-center text-2xl font-bold text-primary">{school.name.charAt(0)}</div>
+                    )}
+                    <CardTitle className="text-lg line-clamp-2 ">{school.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <CardDescription className="text-sm text-muted-foreground mb-1 text-blue-500 font-bold">{school.nationality}</CardDescription>
+                    <div className="text-xs text-gray-500 line-clamp-2">{school.address}</div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
 };
 
 export default HomePage;
+
+/* Thêm CSS ẩn thanh scroll ngang nếu chưa có */
+/* .hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } */

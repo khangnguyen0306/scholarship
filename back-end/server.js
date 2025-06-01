@@ -24,6 +24,7 @@ import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import Message from './models/Message.model.js';
 import UploadRoute from './routes/upload.route.js';
+import RatingRoute from './routes/rating.route.js';
 
 // const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -52,6 +53,7 @@ app.use('/api/mentors', MentorRoute);
 app.use('/api/mentor-requests', MentorRequestRoute);
 app.use('/api/chat-rooms', ChatRoomRoute);
 app.use('/api/upload', UploadRoute);
+app.use('/api/ratings', RatingRoute);
 
 const specs = swaggerJsdoc(swaggerOptions);
 

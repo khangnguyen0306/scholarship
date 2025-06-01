@@ -65,7 +65,9 @@ const ManageMentorsPage = lazy(async () => {
   const module = await import('@/pages/admin/AdminDashboardPage');
   return { default: module.ManageMentorsPage };
 });
-const MentorDetailPage = lazy(() => import('@/pages/admin/MentorDetailPage'));
+const MentorDetailPage = lazy(() => import('@/pages/MentorDetailPage'));
+const MentorsListPage = lazy(() => import('@/pages/MentorsListPage'));
+const MentorRequestsPage = lazy(() => import('@/pages/MentorRequestsPage'));
 
 
 const LoadingFallback = () => (
@@ -97,6 +99,9 @@ function App() {
               <Route path="payment-success" element={<PaymentSuccess />} />
 
               <Route path="blog" element={<BlogPage />} />
+              <Route path="mentors" element={<MentorsListPage />} />
+              <Route path="mentors/:mentorId" element={<MentorDetailPage />} />
+              <Route path="mentor-requests" element={<ProtectedRoute allowedRoles={['mentor']}><MentorRequestsPage /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route
                 path="blog/new-post"

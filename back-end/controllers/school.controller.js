@@ -22,7 +22,7 @@ const createSchool = asyncHandler(async (req, res) => {
 // @route   GET /api/schools
 // @access  Admin
 const getSchools = asyncHandler(async (req, res) => {
-  const { search, nationality } = req.query;
+  const { search, nationality, limit } = req.query;
   let filter = {};
   if (search) {
     filter.name = { $regex: search, $options: 'i' };
@@ -30,7 +30,11 @@ const getSchools = asyncHandler(async (req, res) => {
   if (nationality) {
     filter.nationality = { $regex: `^${nationality}$`, $options: 'i' };
   }
-  const schools = await School.find(filter);
+  let query = School.find(filter);
+  if (limit) {
+    query = query.limit(Number(limit));
+  }
+  const schools = await query;
   // Lấy số lượng học bổng cho từng trường
   const Scholarship = (await import('../models/Scholarship.model.js')).default;
   const schoolsWithScholarshipCount = await Promise.all(
