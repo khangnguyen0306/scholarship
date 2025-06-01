@@ -11,8 +11,7 @@ import data from '@emoji-mart/data';
 import { useUploadFileCloudinaryMutation, useGetFileMutation, useUploadFileMutation } from '../services/UploadAPI';
 import { useCreateRatingMutation } from '../services/UserAPI';
 import { useToast } from '@/components/ui/use-toast';
-const SOCKET_URL = 'http://localhost:3000';
-// const SOCKET_URL = import.meta.env.VITE_BE_API;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_BE;
 
 let socket;
 
