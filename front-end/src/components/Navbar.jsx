@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, UserPlus, Home, BookOpen, Award, UserCircle, LogOut, Settings, Newspaper, ShieldCheck, Crown  } from 'lucide-react';
+import { LogIn, UserPlus, Home, BookOpen, Award, UserCircle, LogOut, Settings, Newspaper, ShieldCheck, Crown, MessageCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../slices/authSlice';
@@ -55,6 +55,9 @@ const Navbar = () => {
             <NavLink to="/schools" icon={<BookOpen className="h-5 w-5 mr-1" />}>Trường học</NavLink>
             <NavLink to="/scholarships" icon={<Award className="h-5 w-5 mr-1" />}>Học bổng</NavLink>
             <NavLink to="/blog" icon={<Newspaper className="h-5 w-5 mr-1" />}>Blog</NavLink>
+            {user && (
+              <NavLink to="/chat" icon={<MessageCircle className="h-5 w-5 mr-1" />}>Chat</NavLink>
+            )}
           </div>
 
           <div className="flex items-center space-x-3">

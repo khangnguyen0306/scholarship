@@ -63,8 +63,9 @@ import { useCreateSchoolMutation, useDeleteSchoolMutation, useGetSchoolsQuery, u
 import { useCreateScholarshipMutation, useDeleteScholarshipMutation, useGetScholarshipsQuery, useUpdateScholarshipMutation } from '../../services/ScholarshipAPI';
 import { useGetScholarshipRequirementsQuery, useCreateScholarshipRequirementsMutation, useUpdateScholarshipRequirementsMutation, useDeleteScholarshipRequirementsMutation } from '../../services/ScholarRequirement';
 import { useGetAllApplicationsQuery, useGetApplicationDetailQuery } from '../../services/ApplicationAPI';
-import { useGetCertificateTypesQuery } from '../services/CertificateAPI';
+
 import { useGetMentorsQuery, useApproveMentorMutation, useRejectMentorMutation } from '../../services/UserAPI';
+import { useGetCertificateTypesQuery } from '../../services/CertificateAPI';
 
 const AdminDashboardPage = () => {
   const location = useLocation();

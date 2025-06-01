@@ -49,7 +49,7 @@ const HomePage = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            ScholarSeeker giúp bạn tìm kiếm và nộp đơn vào các học bổng phù hợp nhất từ khắp nơi trên thế giới.
+            GrantHub giúp bạn tìm kiếm và nộp đơn vào các học bổng phù hợp nhất từ khắp nơi trên thế giới.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -99,7 +99,7 @@ const HomePage = () => {
 
       <section className="container mx-auto px-4">
         <h2 className="text-4xl font-bold text-center mb-12">
-          Tại Sao Chọn <span className="text-gradient-primary">ScholarSeeker</span>?
+          Tại Sao Chọn <span className="text-gradient-primary">GrantHub</span>?
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => (

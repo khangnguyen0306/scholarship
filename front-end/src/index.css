@@ -99,7 +99,7 @@ body {
 }
 
 /* Custom scrollbar (optional, for aesthetics) */
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
@@ -112,4 +112,4 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary));
-}
+} */

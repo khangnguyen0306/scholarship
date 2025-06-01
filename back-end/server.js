@@ -18,7 +18,12 @@ import CommentRoute from './routes/Comment.route.js';
 import ApplicationRoute from './routes/Application.route.js';
 import MentorRoute from './routes/Mentor.route.js';
 import cors from 'cors';
-
+import MentorRequestRoute from './routes/mentorRequest.routes.js';
+import ChatRoomRoute from './routes/chatRoom.routes.js';
+import http from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import Message from './models/Message.model.js';
+import UploadRoute from './routes/upload.route.js';
 
 // const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -44,7 +49,9 @@ app.use('/api/blogs', BlogRoute);
 app.use('/api/comments', CommentRoute);
 app.use('/api/applications', ApplicationRoute);
 app.use('/api/mentors', MentorRoute);
-
+app.use('/api/mentor-requests', MentorRequestRoute);
+app.use('/api/chat-rooms', ChatRoomRoute);
+app.use('/api/upload', UploadRoute);
 
 const specs = swaggerJsdoc(swaggerOptions);
 
@@ -55,4 +62,39 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = http.createServer(app);
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  socket.on('join_room', (roomId) => {
+    socket.join(roomId);
+  });
+
+  socket.on('send_message', async (data) => {
+    const { roomId, senderId, content, type = 'text', fileUrl, fileName, emoji } = data;
+    const message = await Message.create({
+      roomId,
+      senderId,
+      type,
+      content,
+      fileUrl,
+      fileName,
+      emoji
+    });
+    const populatedMsg = await message.populate('senderId', '_id');
+    io.to(roomId).emit('receive_message', populatedMsg);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

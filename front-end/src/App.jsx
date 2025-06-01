@@ -23,6 +23,7 @@ const NewBlogPostPage = lazy(() => import('@/pages/blog/NewBlogPostPage'));
 const BlogPostPage = lazy(() => import('@/pages/blog/BlogPostPage'));
 const PaymentSuccess = lazy(() => import('@/pages/PaymentSuccess'));
 const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
+const ChatPage = lazy(() => import('@/pages/ChatPage'));
 
 
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
@@ -106,6 +107,8 @@ function App() {
                 }
               />
               <Route path="blog/:postId" element={<BlogPostPage />} />
+
+              <Route path="chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
 
               {/* Admin Routes */}
               <Route path="admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboardPage /></ProtectedRoute>}>

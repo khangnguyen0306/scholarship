@@ -224,6 +224,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const user = await Auth.create({
     email,
     passwordHash: password,
+    profileImage: '',
     firstName,
     lastName,
     role: 'student',

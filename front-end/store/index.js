@@ -5,6 +5,7 @@ import { persistStore, persistReducer } from "redux-persist";
 import sessionStorage from "redux-persist/lib/storage/session";
 import { baseApi } from "../src/services/BaseAPI";
 import { authApi } from "../src/services/AuthAPI";
+import { uploadApi } from "../src/services/UploadAPI";
 // Không cần import SchoolAPI và ScholarshipAPI nữa
 
 const persistConfig = {
@@ -19,6 +20,7 @@ export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
+    [uploadApi.reducerPath]: uploadApi.reducer,
     auth: AuthPerisReducer,
 
     // theme: themeReducer,
@@ -28,7 +30,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
       },
-    }).concat(baseApi.middleware).concat(authApi.middleware),
+    }).concat(baseApi.middleware).concat(authApi.middleware).concat(uploadApi.middleware),
 });
 
 export const Persister = persistStore(store);
