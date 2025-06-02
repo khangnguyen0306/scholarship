@@ -26,10 +26,11 @@ import {
 const BlogPostPage = () => {
   const { postId } = useParams();
   const { data: response, isLoading, error } = useGetBlogByIdQuery(postId);
-  const { data: commentsResponse } = useGetCommentsByBlogIdQuery(postId);
+  const { data: commentsResponse, refetch } = useGetCommentsByBlogIdQuery(postId);
   const post = response?.data;
   const comments = commentsResponse?.data || [];
   const currentUser = useSelector(selectCurrentUser);
+  const token = currentUser?.token;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [deleteBlog] = useDeleteBlogMutation();
@@ -57,7 +58,7 @@ const BlogPostPage = () => {
         title: "Xóa bài viết thành công",
         description: "Bài viết đã được xóa khỏi hệ thống.",
       });
-      window.location.href = '/blog';
+      refetch(postId)
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -92,7 +93,9 @@ const BlogPostPage = () => {
       toast({
         title: "Cập nhật thành công",
         description: "Bài viết đã được cập nhật.",
+        className: "bg-green-500 text-white",
       });
+      refetch(postId)
       setIsEditing(false);
     } catch (error) {
       toast({
@@ -125,8 +128,9 @@ const BlogPostPage = () => {
       toast({
         title: "Thêm bình luận thành công",
         description: "Bình luận của bạn đã được đăng.",
+        className: "bg-green-500 text-white",
       });
-      window.location.reload();
+      refetch(postId)
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -150,8 +154,9 @@ const BlogPostPage = () => {
       toast({
         title: "Cập nhật bình luận thành công",
         description: "Bình luận của bạn đã được cập nhật.",
+        className: "bg-green-500 text-white",
       });
-      window.location.reload();
+      refetch(postId)
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -163,15 +168,13 @@ const BlogPostPage = () => {
 
   const handleDeleteComment = async (commentId) => {
     try {
-      await deleteComment({
-        id: commentId,
-        blogId: postId,
-      }).unwrap();
+      await deleteComment(commentId).unwrap();
       toast({
         title: "Xóa bình luận thành công",
         description: "Bình luận đã được xóa.",
+        className: "bg-green-500 text-white",
       });
-      window.location.reload();
+      refetch(postId)
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -352,7 +355,7 @@ const BlogPostPage = () => {
             <div className="w-full">
               <h3 className="text-lg font-semibold mb-4">Bình luận</h3>
               
-              {currentUser && (
+              {token && !isOwner && currentUser.isPremium && (
                 <form onSubmit={handleAddComment} className="mb-6">
                   <div className="flex gap-2">
                     <Textarea
