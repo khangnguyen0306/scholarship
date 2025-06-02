@@ -28,7 +28,7 @@ const VipSubscriptionPage = () => {
     }
 
     try {
-      const amount = plan.name === "Gói Tháng" ? 199000 : 1990000;
+      const amount = 199000;
       const description = `Đăng ký ${plan.name}`;
       
       const result = await createPayment({

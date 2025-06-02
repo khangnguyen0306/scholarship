@@ -8,7 +8,7 @@ import { useGetSchoolsQuery } from '../services/SchoolAPI';
 
 const HomePage = () => {
   const { data: schools } = useGetSchoolsQuery({ limit: 10 });
-  console.log(schools);
+  // console.log(schools);
   const featureVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
@@ -205,6 +205,3 @@ const HomePage = () => {
 
 export default HomePage;
 
-/* Thêm CSS ẩn thanh scroll ngang nếu chưa có */
-/* .hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; } */

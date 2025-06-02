@@ -45,10 +45,44 @@ const RegisterPage = () => {
   // Xử lý đăng ký student giữ nguyên
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate các trường bắt buộc
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      toast({ title: "Lỗi đăng ký", description: "Vui lòng điền đầy đủ thông tin bắt buộc.", variant: "destructive" });
+      return;
+    }
+
+    // Validate họ và tên
+    if (firstName.length < 2 || lastName.length < 2) {
+      toast({ title: "Lỗi đăng ký", description: "Họ và tên phải có ít nhất 2 ký tự.", variant: "destructive" });
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({ title: "Lỗi đăng ký", description: "Email không hợp lệ.", variant: "destructive" });
+      return;
+    }
+
+    // Validate password
+    if (password.length < 8) {
+      toast({ title: "Lỗi đăng ký", description: "Mật khẩu phải có ít nhất 8 ký tự.", variant: "destructive" });
+      return;
+    }
+
+    // Validate password có chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+    if (!passwordRegex.test(password)) {
+      toast({ title: "Lỗi đăng ký", description: "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số.", variant: "destructive" });
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({ title: "Lỗi đăng ký", description: "Mật khẩu xác nhận không khớp.", variant: "destructive" });
       return;
     }
+
     try {
       setIsLoading(true);
       const response = await registerUser({ firstName, lastName, email, password });
@@ -72,48 +106,102 @@ const RegisterPage = () => {
       toast({ title: "Lỗi đăng ký", description: "Vui lòng điền đầy đủ thông tin bắt buộc.", variant: "destructive" });
       return;
     }
+
+    // Validate họ và tên
+    if (mentorFirstName.length < 2 || mentorLastName.length < 2) {
+      toast({ title: "Lỗi đăng ký", description: "Họ và tên phải có ít nhất 2 ký tự.", variant: "destructive" });
+      return;
+    }
+
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(mentorEmail)) {
       toast({ title: "Lỗi đăng ký", description: "Email không hợp lệ.", variant: "destructive" });
       return;
     }
+
     // Validate password
     if (mentorPassword.length < 8) {
       toast({ title: "Lỗi đăng ký", description: "Mật khẩu phải có ít nhất 8 ký tự.", variant: "destructive" });
       return;
     }
+
+    // Validate password có chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+    if (!passwordRegex.test(mentorPassword)) {
+      toast({ title: "Lỗi đăng ký", description: "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số.", variant: "destructive" });
+      return;
+    }
+
     if (mentorPassword !== mentorConfirmPassword) {
       toast({ title: "Lỗi đăng ký", description: "Mật khẩu xác nhận không khớp.", variant: "destructive" });
       return;
     }
+
+    // Validate chuyên ngành
+    if (!mentorMajor) {
+      toast({ title: "Lỗi đăng ký", description: "Vui lòng nhập chuyên ngành.", variant: "destructive" });
+      return;
+    }
+
+    // Validate kinh nghiệm
+    if (!mentorExperience) {
+      toast({ title: "Lỗi đăng ký", description: "Vui lòng nhập kinh nghiệm.", variant: "destructive" });
+      return;
+    }
+
+    // Validate giới thiệu bản thân
+    if (!mentorBio) {
+      toast({ title: "Lỗi đăng ký", description: "Vui lòng nhập giới thiệu bản thân.", variant: "destructive" });
+      return;
+    }
+
     // Validate phone nếu có
     if (mentorPhone && (!/^\d{8,}$/.test(mentorPhone))) {
       toast({ title: "Lỗi đăng ký", description: "Số điện thoại không hợp lệ (chỉ nhập số, tối thiểu 8 ký tự).", variant: "destructive" });
       return;
     }
+
     // Validate degrees
+    const hasValidDegree = mentorDegrees.some(d => d.name && d.institution && d.year);
+    if (!hasValidDegree) {
+      toast({ title: "Lỗi đăng ký", description: "Vui lòng nhập ít nhất một bằng cấp đầy đủ thông tin.", variant: "destructive" });
+      return;
+    }
+
     for (let i = 0; i < mentorDegrees.length; i++) {
       const d = mentorDegrees[i];
-      if ((d.year && (isNaN(Number(d.year)) || Number(d.year) < 1900 || Number(d.year) > 2100))) {
-        toast({ title: "Lỗi đăng ký", description: `Năm bằng cấp ở dòng ${i + 1} không hợp lệ (1900-2100).`, variant: "destructive" });
-        return;
+      if (d.name || d.institution || d.year) {
+        if (!d.name || !d.institution || !d.year) {
+          toast({ title: "Lỗi đăng ký", description: `Vui lòng điền đầy đủ thông tin bằng cấp ở dòng ${i + 1}.`, variant: "destructive" });
+          return;
+        }
+        if ((isNaN(Number(d.year)) || Number(d.year) < 1900 || Number(d.year) > 2100)) {
+          toast({ title: "Lỗi đăng ký", description: `Năm bằng cấp ở dòng ${i + 1} không hợp lệ (1900-2100).`, variant: "destructive" });
+          return;
+        }
       }
     }
+
     // Validate languages
+    const hasValidLanguage = mentorLanguages.some(l => l && l.trim() !== '');
+    if (!hasValidLanguage) {
+      toast({ title: "Lỗi đăng ký", description: "Vui lòng nhập ít nhất một ngôn ngữ.", variant: "destructive" });
+      return;
+    }
+
     for (let i = 0; i < mentorLanguages.length; i++) {
       if (mentorLanguages[i] && mentorLanguages[i].trim() === '') {
         toast({ title: "Lỗi đăng ký", description: `Ngôn ngữ ở dòng ${i + 1} không được để trống nếu đã nhập.`, variant: "destructive" });
         return;
       }
     }
+
     try {
       setMentorLoading(true);
-      const degrees = mentorDegrees.filter(d => d.name || d.institution || d.year);
-      const languages = mentorLanguages.filter(l => l);
+      const degrees = mentorDegrees.filter(d => d.name && d.institution && d.year);
+      const languages = mentorLanguages.filter(l => l && l.trim() !== '');
       const mentorProfile = { major: mentorMajor, experience: mentorExperience, bio: mentorBio, phone: mentorPhone, degrees, languages };
-      // Gọi mutation đăng ký mentor (cần tạo mutation riêng cho mentor)
-      // console.log(mentorProfile);
       const response = await registerMentor({
         firstName: mentorFirstName,
         lastName: mentorLastName,
@@ -121,7 +209,6 @@ const RegisterPage = () => {
         password: mentorPassword,
         mentorProfile
       });
-      console.log(response);
       if (response.error) {
         toast({ title: "Đăng ký mentor thất bại!", description: response.error.data.error.message, variant: "destructive" });
       } else {
